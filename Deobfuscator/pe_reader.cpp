@@ -26,7 +26,7 @@ boolean PEReader::open(const std::string file_path) {
 	return TRUE;
 }
 
-boolean PEReader::readPE() { 
+boolean PEReader::readPE() {
 	try {
 		// Read DOS_HEADER
 		ifs.read((char *)&pe.dos_header, sizeof(IMAGE_DOS_HEADER));
@@ -42,11 +42,10 @@ boolean PEReader::readPE() {
 		pe.number_of_sections = pe.nt_headers.FileHeader.NumberOfSections;
 		readSections(pe.number_of_sections);
 	}
-	catch (std::exception& e) {
+	catch (std::exception&) {
 		return FALSE;
 	}
 	return TRUE;
-
 }
 
 void PEReader::readSections(int num_of_sections) throw(std::bad_alloc) {
@@ -80,25 +79,34 @@ boolean PEReader::isPEFormat() {
 	return signature[0] == 'P' && signature[1] == 'E';
 }
 
-PEReader::Builder::Builder(const std::string file_path) {
+PEFormat PEReader::getPEFormat() {
+	return this->pe;
+}
+
+PEReader::Builder::Builder() {
+}
+
+PEReader::Builder* PEReader::Builder::setInputFilePath(const std::string file_path)
+{
 	this->file_path = file_path;
+	return this;
 }
 
 PEReader* PEReader::Builder::build() {
-	PEReader reader;
-	if (!reader.open(file_path)) {
+	PEReader *reader = new PEReader();
+	if (!reader->open(file_path)) {
 		err_msg = "cannot open file";
 		return nullptr;
 	}
-	if (!reader.readPE()) {
+	if (!reader->readPE()) {
 		err_msg = "cannot read file";
 		return nullptr;
 	}
-	if (!reader.isPEFormat()) {
+	if (!reader->isPEFormat()) {
 		err_msg = "the file isn't PE Executable";
 		return nullptr;
 	}
-	return &reader;
+	return reader;
 }
 
 std::string PEReader::Builder::getErrMsg() {

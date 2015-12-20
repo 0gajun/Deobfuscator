@@ -16,9 +16,6 @@
     <Filter Include="ソース ファイル\pe">
       <UniqueIdentifier>{9fb7bfc7-3231-4e0d-9df0-6cfab36e80d6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ヘッダー ファイル\pe">
-      <UniqueIdentifier>{e334e338-da7a-4b1a-93f1-ba2b5b54e0e6}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -29,15 +26,6 @@
     </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="pe_format.h">
-      <Filter>ヘッダー ファイル\pe</Filter>
-    </ClInclude>
-    <ClInclude Include="section_data.h">
-      <Filter>ヘッダー ファイル\pe</Filter>
-    </ClInclude>
-    <ClInclude Include="pe_reader.h">
-      <Filter>ヘッダー ファイル\pe</Filter>
     </ClInclude>
     <ClInclude Include="pe.h">
       <Filter>ヘッダー ファイル</Filter>

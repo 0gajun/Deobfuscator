@@ -16,7 +16,7 @@ public:
 	int size();
 };
 
-class PEFormat{
+class PEFormat {
 public:
 	IMAGE_DOS_HEADER			dos_header;
 	char						*dos_stub;
@@ -41,15 +41,17 @@ private:
 	void readSections(int num_of_sections) throw(std::bad_alloc);
 	char* data_malloc(int size) throw(std::bad_alloc);
 	boolean PEReader::isPEFormat();
-	
+
 public:
+	PEFormat getPEFormat();
 	class Builder
 	{
 	private:
 		std::string file_path;
 		std::string err_msg;
 	public:
-		Builder(const std::string file_path);
+		Builder();
+		Builder* setInputFilePath(const std::string file_path);
 		PEReader *build();
 		std::string getErrMsg();
 	};
@@ -57,5 +59,29 @@ public:
 
 class PEWriter
 {
+private:
+	PEFormat *pe;
+	std::ofstream ofs;
 
+	PEWriter(PEFormat *pe_fmt);
+	~PEWriter();
+	boolean open(const std::string output_file_path);
+public:
+
+	void setPEFormat(PEFormat *pe_fmt);
+	boolean write();
+
+	class Builder
+	{
+	private:
+		PEFormat *pe_fmt;
+		std::string output_file_path;
+		std::string err_msg;
+	public:
+		Builder();
+		Builder* setOutputFilePath(const std::string file_path);
+		Builder* setPEFormat(PEFormat *pe_fmt);
+		PEWriter *build();
+		std::string getErrMsg();
+	};
 };
