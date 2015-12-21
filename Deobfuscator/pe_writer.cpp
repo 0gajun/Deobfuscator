@@ -27,7 +27,7 @@ boolean PEWriter::write() {
 
 	// write DOS_HEADER and DOS_STUB
 	ofs.write((char *)&pe->dos_header, sizeof(IMAGE_DOS_HEADER));
-	ofs.write(pe->dos_stub, pe->dos_stub_size);
+	ofs.write(pe->dos_stub.data(), pe->dos_stub.size());
 
 	// write NT_HEADERS
 	ofs.seekp(pe->dos_header.e_lfanew, std::ios::beg);
@@ -41,8 +41,7 @@ boolean PEWriter::write() {
 	// write section data
 	for (int i = 0; i < pe->number_of_sections; i++) {
 		ofs.seekp(pe->section_headers[i].PointerToRawData, std::ios::beg);
-		SectionData sd = pe->section_data[i];
-		ofs.write(sd.data(), sd.size());
+		ofs.write(pe->section_data[i].data(), pe->section_data[i].size());
 	}
 	return TRUE;
 }

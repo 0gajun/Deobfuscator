@@ -6,8 +6,6 @@
 #include <iostream>
 using namespace std;
 
-int hoge(char**);
-
 int main(int argc, char** argv)
 {
 	if (argc != 2) {
@@ -39,7 +37,6 @@ int main(int argc, char** argv)
 
 	editor.addSection(shadow_section_header, new_code, 1);
 	PEFormat *modified_pe = editor.result();
-
 
 	// Write
 	PEWriter::Builder writer_builder;

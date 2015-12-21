@@ -65,7 +65,7 @@ int PEEditor::calcHeaderSize()
 {
 	// Header size is sum of headers including dos_stub.
 	int not_aligned_size = sizeof(IMAGE_DOS_HEADER)
-		+ pe_fmt.dos_stub_size
+		+ pe_fmt.dos_stub.size()
 		+ sizeof(IMAGE_NT_HEADERS)
 		+ sizeof(IMAGE_SECTION_HEADER) * pe_fmt.number_of_sections;
 
@@ -81,12 +81,13 @@ void PEEditor::addSection(IMAGE_SECTION_HEADER section_header,
 		= (section_virtual_size / pe_fmt.nt_headers.OptionalHeader.FileAlignment + 1)
 		* pe_fmt.nt_headers.OptionalHeader.FileAlignment;
 
-	char *section_raw_data = (char *)malloc(sizeof(section_raw_size));
-	memset(section_raw_data, 0, section_raw_size);
-	memcpy(section_raw_data, section_virtual_data, section_virtual_size);
+	std::vector<char> section_raw_data(section_raw_size);
+
+	memset(section_raw_data.data(), 0, section_raw_size);
+	memcpy(section_raw_data.data(), section_virtual_data, section_virtual_size);
 
 	pe_fmt.section_headers.push_back(section_header);
-	pe_fmt.section_data.push_back(SectionData(section_raw_data, section_raw_size));
+	pe_fmt.section_data.push_back(section_raw_data);
 	pe_fmt.number_of_sections++;
 }
 
