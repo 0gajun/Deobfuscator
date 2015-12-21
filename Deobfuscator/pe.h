@@ -85,3 +85,46 @@ public:
 		std::string getErrMsg();
 	};
 };
+
+class PEEditor
+{
+private:
+	PEFormat pe_fmt;
+public:
+	PEEditor(PEFormat pe_fmt);
+	~PEEditor();
+
+	PEFormat result();
+	void addSection(IMAGE_SECTION_HEADER section_header, char * section_raw_data, int section_raw_size);
+
+
+	class SectionHeaderBuilder
+	{
+	private:
+		BYTE		name[IMAGE_SIZEOF_SHORT_NAME];
+		DWORD	virtual_size = 0;
+		DWORD	virtual_address = 0;
+		DWORD	size_of_raw_data = 0;
+		DWORD	pointer_to_raw_data = 0;
+		DWORD	pointer_to_relocations = 0;
+		DWORD	pointer_to_linenumbers = 0;
+		WORD		number_of_relocations = 0;
+		WORD		number_of_linenumbers = 0;
+		DWORD	characteristics = 0;
+
+		boolean has_error = false;
+		std::string err_msg;
+	public:
+		SectionHeaderBuilder* setName(BYTE* name, int size);
+		SectionHeaderBuilder* setVirtualSize(int vsize);
+		PEEditor::SectionHeaderBuilder * setVirtualAddress(int vaddr);
+		PEEditor::SectionHeaderBuilder * setSizeOfRawData(int size_of_raw_data);
+		PEEditor::SectionHeaderBuilder * setPointerToRawData(int addr);
+		PEEditor::SectionHeaderBuilder * setPointerToRelocations(int addr);
+		PEEditor::SectionHeaderBuilder * setPointerToLinenumbers(int addr);
+		PEEditor::SectionHeaderBuilder * setNumberOfRelocations(int num);
+		PEEditor::SectionHeaderBuilder * setNumberOfLinenumbers(int num);
+		PEEditor::SectionHeaderBuilder * setCharacteristcs(int flag);
+		IMAGE_SECTION_HEADER build();
+	};
+};
