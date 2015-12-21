@@ -90,13 +90,21 @@ class PEEditor
 {
 private:
 	PEFormat pe_fmt;
+	boolean isValidFormat();
+	boolean isValidSectionAlignment();
+	boolean isValidFileAlignment();
+	void commit();
+	int calcImageSize();
+	int calcHeaderSize();
 public:
 	PEEditor(PEFormat pe_fmt);
 	~PEEditor();
 
-	PEFormat result();
-	void addSection(IMAGE_SECTION_HEADER section_header, char * section_raw_data, int section_raw_size);
+	PEFormat* result();
 
+	// modification methods
+	void addSection(IMAGE_SECTION_HEADER section_header, char * section_virtual_data, int section_vitrual_size);
+	boolean overwriteCode(char * new_value, int size, int raw_addr);
 
 	class SectionHeaderBuilder
 	{
@@ -115,6 +123,8 @@ public:
 		boolean has_error = false;
 		std::string err_msg;
 	public:
+		SectionHeaderBuilder();
+
 		SectionHeaderBuilder* setName(BYTE* name, int size);
 		SectionHeaderBuilder* setVirtualSize(int vsize);
 		PEEditor::SectionHeaderBuilder * setVirtualAddress(int vaddr);

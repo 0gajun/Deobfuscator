@@ -151,6 +151,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Deobfuscator.cpp" />
+    <ClCompile Include="pe_editor.cpp" />
     <ClCompile Include="pe_reader.cpp" />
     <ClCompile Include="pe_writer.cpp" />
     <ClCompile Include="section_data.cpp" />
