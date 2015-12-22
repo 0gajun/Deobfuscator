@@ -26,7 +26,7 @@ private:
 
 	boolean open(const std::string file_path);
 	boolean readPE();
-	void readSections(int num_of_sections) throw(std::bad_alloc);
+	void readSections(int num_of_sections);
 	boolean PEReader::isPEFormat();
 
 public:

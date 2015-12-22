@@ -16,6 +16,12 @@
     <Filter Include="ソース ファイル\pe">
       <UniqueIdentifier>{9fb7bfc7-3231-4e0d-9df0-6cfab36e80d6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\util">
+      <UniqueIdentifier>{f70f35fe-f352-45c8-b348-4b092304eeb4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\util">
+      <UniqueIdentifier>{c07d53d1-da9b-4ee4-9fd1-1fa3bf7512f3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -29,6 +35,12 @@
     </ClInclude>
     <ClInclude Include="pe.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="trace.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="string_util.h">
+      <Filter>ヘッダー ファイル\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -46,6 +58,12 @@
     </ClCompile>
     <ClCompile Include="pe_editor.cpp">
       <Filter>ソース ファイル\pe</Filter>
+    </ClCompile>
+    <ClCompile Include="trace_reader.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="string_util.cpp">
+      <Filter>ソース ファイル\util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
