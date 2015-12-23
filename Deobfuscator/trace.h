@@ -9,6 +9,12 @@
 #include <memory>
 #include <regex>
 
+// asmmbley format of logfile is like this.
+//
+// 0x8308594c:     lock      xadd       %esi,(%eax)
+// |  addr  |:__|(prefix)|_|opcode|__|  (operands)   | () <- is optional
+#define LOGFILE_ASM_LINE_REGEX "^0x([0-9a-zA-Z]+):\\s*(\\w*) (\\w+)\\s*(\\S*)$"
+
 class Instruction
 {
 public:

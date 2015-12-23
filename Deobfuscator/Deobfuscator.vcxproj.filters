@@ -22,6 +22,9 @@
     <Filter Include="ヘッダー ファイル\util">
       <UniqueIdentifier>{c07d53d1-da9b-4ee4-9fd1-1fa3bf7512f3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\test">
+      <UniqueIdentifier>{d534b4df-f1b7-4201-b7a9-bff5cfa4707e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -41,6 +44,9 @@
     </ClInclude>
     <ClInclude Include="string_util.h">
       <Filter>ヘッダー ファイル\util</Filter>
+    </ClInclude>
+    <ClInclude Include="test.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -67,6 +73,9 @@
     </ClCompile>
     <ClCompile Include="basic_block.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="test.cpp">
+      <Filter>ソース ファイル\test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

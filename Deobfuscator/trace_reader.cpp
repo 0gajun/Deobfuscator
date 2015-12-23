@@ -7,11 +7,6 @@
 #define LOG_DELIMITER "="
 #define ADDRESS_LEN_IN_LOGFILE 10
 
-// asmmbley format of logfile is like this.
-//
-// 0x8308594c:    movw      $0x0,0x2(%esp)
-// |  addr  |:__|opcode|__|   operands    |
-#define LOGFILE_ASM_LINE_REGEX "^0x([0-9a-zA-Z]+):\\s*(\\S+)\\s*(\\S*)$"
 #define NUM_OF_CHARACTER_IN_A_BYTE 2
 
 TraceReader::TraceReader()
