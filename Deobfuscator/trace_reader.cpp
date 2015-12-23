@@ -86,6 +86,11 @@ std::shared_ptr<Instruction> TraceReader::parseInstructionWithoutBinary(std::str
 	std::shared_ptr<Instruction> insn = std::make_shared<Instruction>();
 
 	std::vector<std::string> insn_chunks = StringUtil::split(insn_str, ' ');
+	// insn_str format of logfile is like this
+	//
+	// 0x8308594c:    lock       xadd       %esi,(%eax)
+	// |  addr  |:__|(prefix)|_|opcode|__|  (operands)  | () <- is optional
+
 
 	if (insn_chunks.size() < 2) {
 		// insn_str should have two chunks(address and opcode) at least.
