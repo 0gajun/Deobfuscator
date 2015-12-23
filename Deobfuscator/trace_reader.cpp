@@ -3,6 +3,8 @@
 #include "string_util.h"
 #include <sstream>
 
+#include <iostream>
+
 
 #define LOG_DELIMITER "="
 #define ADDRESS_LEN_IN_LOGFILE 10
@@ -11,8 +13,6 @@
 
 TraceReader::TraceReader()
 {
-	this->asm_insn_regex = std::regex(LOGFILE_ASM_LINE_REGEX);
-
 	this->data = std::make_shared<TraceData>();
 }
 
@@ -84,17 +84,48 @@ std::shared_ptr<BasicBlock> TraceReader::parseBasicBlock(
 std::shared_ptr<Instruction> TraceReader::parseInstructionWithoutBinary(std::string insn_str)
 {
 	std::shared_ptr<Instruction> insn = std::make_shared<Instruction>();
-	std::smatch result;
-	
-	std::regex_match(insn_str, result, this->asm_insn_regex);
 
-	std::string addr = result[1].str();
-	insn->addr = std::stoul(addr, nullptr, 16);
-	insn->opcode = result[2].str();
+	std::vector<std::string> insn_chunks = StringUtil::split(insn_str, ' ');
 
-	insn->operands = StringUtil::split(result[3].str(), ',');
+	if (insn_chunks.size() < 2) {
+		// insn_str should have two chunks(address and opcode) at least.
+		//TODO: error handling correctly
+		std::cout << "invalid insn format: " << insn_str << std::endl;
+		exit(1);
+	}
 
+	insn->addr = std::stoul(insn_chunks[0].substr(0, 10), nullptr, 16);
+
+	if (existsOperand(insn_chunks)) {
+		std::string last_chunk = insn_chunks[insn_chunks.size() - 1];
+		insn->operands = StringUtil::split(last_chunk, ',');
+		insn_chunks.pop_back();
+	}
+
+	switch (insn_chunks.size())
+	{
+	case 2: // only opcode case
+		insn->opcode = insn_chunks[1];
+		break;
+	case 3: // with prefix case
+		insn->prefix = insn_chunks[1];
+		insn->opcode = insn_chunks[2];
+		break;
+	case 1: // only address (unexpected case)
+	default: // unexpected case
+		// TODO: error handling correctly
+		break;
+	}
 	return insn;
+}
+
+bool TraceReader::existsOperand(std::vector<std::string> insn_chunks)
+{
+	std::string last_chunk = insn_chunks[insn_chunks.size() - 1];
+
+	return last_chunk.find("0x") != std::string::npos // including address or offset
+			|| last_chunk.find("%") != std::string::npos // including register
+			|| last_chunk.find("$") != std::string::npos; // including immediate value
 }
 
 // parse binary code and insert into Instruction object

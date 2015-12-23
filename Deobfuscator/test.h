@@ -2,5 +2,5 @@
 
 namespace trace_reader_test
 {
-	bool regexTest();
+	bool parseInstructionTest();
 }
