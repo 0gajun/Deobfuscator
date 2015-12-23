@@ -68,8 +68,7 @@ std::shared_ptr<BasicBlock> TraceReader::parseBasicBlock(
 	std::vector<std::string> insn_buffer,
 	std::string code_bytes)
 {
-	std::shared_ptr<BasicBlock> bb = std::make_shared<BasicBlock>();
-	bb->original_id = id;
+	std::shared_ptr<BasicBlock> bb = std::make_shared<BasicBlock>(id);
 	
 	// Parse each instruction with out code bytes
 	for (std::string insn : insn_buffer) {

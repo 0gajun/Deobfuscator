@@ -21,7 +21,7 @@ public:
 class BasicBlock
 {
 public:
-	int original_id;
+	const int original_id;
 	std::set<int> block_id_set;
 	std::vector<std::shared_ptr<Instruction>> insn_list;
 	unsigned int head_insn_addr;
@@ -29,6 +29,8 @@ public:
 	unsigned int next_bb_addr;
 	std::unordered_map<int, std::shared_ptr<BasicBlock>> prev_bbs;
 	std::unordered_map<int, std::shared_ptr<BasicBlock>> next_bbs;
+
+	BasicBlock(const int id);
 };
 
 class TraceData
