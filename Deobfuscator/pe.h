@@ -113,15 +113,15 @@ public:
 		SectionHeaderBuilder();
 
 		SectionHeaderBuilder* setName(BYTE* name, int size);
-		SectionHeaderBuilder* setVirtualSize(int vsize);
-		PEEditor::SectionHeaderBuilder * setVirtualAddress(int vaddr);
-		PEEditor::SectionHeaderBuilder * setSizeOfRawData(int size_of_raw_data);
-		PEEditor::SectionHeaderBuilder * setPointerToRawData(int addr);
-		PEEditor::SectionHeaderBuilder * setPointerToRelocations(int addr);
-		PEEditor::SectionHeaderBuilder * setPointerToLinenumbers(int addr);
-		PEEditor::SectionHeaderBuilder * setNumberOfRelocations(int num);
-		PEEditor::SectionHeaderBuilder * setNumberOfLinenumbers(int num);
-		PEEditor::SectionHeaderBuilder * setCharacteristcs(int flag);
+		SectionHeaderBuilder* setVirtualSize(DWORD vsize);
+		PEEditor::SectionHeaderBuilder * setVirtualAddress(DWORD vaddr);
+		PEEditor::SectionHeaderBuilder * setSizeOfRawData(DWORD size_of_raw_data);
+		PEEditor::SectionHeaderBuilder * setPointerToRawData(DWORD addr);
+		PEEditor::SectionHeaderBuilder * setPointerToRelocations(DWORD addr);
+		PEEditor::SectionHeaderBuilder * setPointerToLinenumbers(DWORD addr);
+		PEEditor::SectionHeaderBuilder * setNumberOfRelocations(WORD num);
+		PEEditor::SectionHeaderBuilder * setNumberOfLinenumbers(WORD num);
+		PEEditor::SectionHeaderBuilder * setCharacteristcs(DWORD flag);
 		IMAGE_SECTION_HEADER build();
 	};
 };

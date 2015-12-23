@@ -131,55 +131,55 @@ PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setName(BYTE* na
 	return this;
 }
 
-PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setVirtualSize(int vsize)
+PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setVirtualSize(DWORD vsize)
 {
 	this->virtual_size = vsize;
 	return this;
 }
 
-PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setVirtualAddress(int vaddr)
+PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setVirtualAddress(DWORD vaddr)
 {
 	this->virtual_address = vaddr;
 	return this;
 }
 
-PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setSizeOfRawData(int size_of_raw_data)
+PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setSizeOfRawData(DWORD size_of_raw_data)
 {
 	this->size_of_raw_data = size_of_raw_data;
 	return this;
 }
 
-PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setPointerToRawData(int addr)
+PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setPointerToRawData(DWORD addr)
 {
 	this->pointer_to_raw_data = addr;
 	return this;
 }
 
-PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setPointerToRelocations(int addr)
+PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setPointerToRelocations(DWORD addr)
 {
 	this->pointer_to_relocations = addr;
 	return this;
 }
 
-PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setPointerToLinenumbers(int addr)
+PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setPointerToLinenumbers(DWORD addr)
 {
 	this->pointer_to_linenumbers = addr;
 	return this;
 }
 
-PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setNumberOfRelocations(int num)
+PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setNumberOfRelocations(WORD num)
 {
 	this->number_of_relocations = num;
 	return this;
 }
 
-PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setNumberOfLinenumbers(int num)
+PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setNumberOfLinenumbers(WORD num)
 {
 	this->number_of_linenumbers;
 	return this;
 }
 
-PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setCharacteristcs(int flag)
+PEEditor::SectionHeaderBuilder* PEEditor::SectionHeaderBuilder::setCharacteristcs(DWORD flag)
 {
 	this->characteristics |= flag;
 	return this;
