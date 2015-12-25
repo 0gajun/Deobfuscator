@@ -35,7 +35,7 @@ std::shared_ptr<TraceData> TraceReader::read()
 		throw std::exception::exception("file isn't opened.");
 	}
 
-	int bb_id = 0;
+	unsigned int bb_id = 0;
 	std::string line;
 	std::string code_bytes;
 	std::vector<std::string> insn_buffer;
@@ -45,17 +45,53 @@ std::shared_ptr<TraceData> TraceReader::read()
 		}
 		if (line == LOG_DELIMITER) {
 			std::getline(ifs, code_bytes);
-			std::shared_ptr<BasicBlock> bb = parseBasicBlock(bb_id++, insn_buffer, code_bytes);
-			data->basic_blocks.insert(
-				std::map<int, std::shared_ptr<BasicBlock>>::value_type(bb->original_id, bb));
+			std::shared_ptr<BasicBlock> bb = registerBasicBlock(parseBasicBlock(bb_id, insn_buffer, code_bytes));
+
 			insn_buffer.clear();
 			code_bytes.clear();
+			bb_id++;
 			continue;
 		}
 
 		insn_buffer.push_back(line);
 	}
 	return data;
+}
+
+// return: registered basic block
+std::shared_ptr<BasicBlock> TraceReader::registerBasicBlock(std::shared_ptr<BasicBlock> bb)
+{
+	if (existsSameBasicBlock(bb)) {
+		return registerExistingBasicBlock(bb);
+	}
+	else {
+		return registerNewBasicBlock(bb);
+	}
+}
+
+std::shared_ptr<BasicBlock> TraceReader::registerNewBasicBlock(std::shared_ptr<BasicBlock> bb)
+{
+	data->basic_blocks.insert(
+		std::map<unsigned int, std::shared_ptr<BasicBlock>>::value_type(bb->original_id, bb));
+	data->addr_bb_map.insert(
+		std::map<unsigned int, std::shared_ptr<BasicBlock>>::value_type(bb->head_insn_addr, bb));
+	return bb;
+}
+
+std::shared_ptr<BasicBlock> TraceReader::registerExistingBasicBlock(std::shared_ptr<BasicBlock> bb)
+{
+	std::shared_ptr<BasicBlock> existing_bb = data->addr_bb_map[bb->head_insn_addr];
+
+	existing_bb->block_id_set.insert(bb->original_id);
+
+	data->basic_blocks.insert(
+		std::map<unsigned int, std::shared_ptr<BasicBlock>>::value_type(bb->original_id, existing_bb));
+	return existing_bb;
+}
+
+bool TraceReader::existsSameBasicBlock(std::shared_ptr<BasicBlock> bb)
+{
+	return data->addr_bb_map.find(bb->head_insn_addr) != data->addr_bb_map.end();
 }
 
 std::shared_ptr<BasicBlock> TraceReader::parseBasicBlock(

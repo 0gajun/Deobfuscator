@@ -27,8 +27,9 @@ public:
 	unsigned int head_insn_addr;
 	unsigned int tail_insn_addr;
 	unsigned int next_bb_addr;
-	std::unordered_map<int, std::shared_ptr<BasicBlock>> prev_bbs;
-	std::unordered_map<int, std::shared_ptr<BasicBlock>> next_bbs;
+
+	std::unordered_map<int, std::shared_ptr<BasicBlock>> prev_bbs; // map<original_id, ptr>
+	std::unordered_map<int, std::shared_ptr<BasicBlock>> next_bbs; // map<original_id, ptr>
 
 	BasicBlock(const int id);
 };
@@ -36,7 +37,8 @@ public:
 class TraceData
 {
 public:
-	std::map<int, std::shared_ptr<BasicBlock>> basic_blocks;
+	std::map<unsigned int, std::shared_ptr<BasicBlock>> basic_blocks;
+	std::map<unsigned int, std::shared_ptr<BasicBlock>> addr_bb_map;
 };
 
 class TraceReader
@@ -45,6 +47,10 @@ private:
 	std::ifstream ifs;
 	std::shared_ptr<TraceData> data;
 
+	std::shared_ptr<BasicBlock> registerBasicBlock(std::shared_ptr<BasicBlock> bb);
+	std::shared_ptr<BasicBlock> registerNewBasicBlock(std::shared_ptr<BasicBlock> bb);
+	std::shared_ptr<BasicBlock> registerExistingBasicBlock(std::shared_ptr<BasicBlock> bb);
+	bool existsSameBasicBlock(std::shared_ptr<BasicBlock> bb);
 	std::shared_ptr<BasicBlock> parseBasicBlock(int id, std::vector<std::string> insn_buffer, std::string code_bytes);
 	unsigned int parseBinaryCodeInBasicBlock(std::shared_ptr<BasicBlock> bb_ptr, std::string code_bytes);
 
