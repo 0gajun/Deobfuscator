@@ -86,8 +86,11 @@ private:
 	std::pair<unsigned int, unsigned int> epilogue_bb_range;
 
 	unsigned int getReturnAddressOfCallInsn(std::shared_ptr<Instruction> call_insn);
-	void detectPrologueEpilogueCode();
-	inline bool isProgramCode(unsigned int address);
+	void detectPrologueEpilogueCodeRegion();
+
+	bool isProgramCode(unsigned int address);
+	bool isInPrologueCode(unsigned int bb_id);
+	bool isInEpilogueCode(unsigned int bb_id);
 
 public:
 	TraceAnalyzer(TraceData data);

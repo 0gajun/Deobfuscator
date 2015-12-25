@@ -9,17 +9,17 @@ TraceAnalyzer::TraceAnalyzer(TraceData data) : trace(data)
 
 bool TraceAnalyzer::analyze()
 {
-	detectPrologueEpilogueCode();
+	detectPrologueEpilogueCodeRegion();
 
 	for (auto it = trace.basic_blocks.begin(); it != trace.basic_blocks.end(); it++) {
 		std::shared_ptr<BasicBlock> bb = it->second;
 		const unsigned int bb_id = it->first;
 
-		if (prologue_bb_range.first <= it->first && it->first <= prologue_bb_range.second) {
+		if (isInPrologueCode(bb_id)) {
 			continue;
 		}
 		
-		if (epilogue_bb_range.first <= it->first && it->first <= epilogue_bb_range.second) {
+		if (isInEpilogueCode(bb_id)) {
 			break;
 		}
 
@@ -44,7 +44,7 @@ bool TraceAnalyzer::analyze()
 	}
 }
 
-void TraceAnalyzer::detectPrologueEpilogueCode()
+void TraceAnalyzer::detectPrologueEpilogueCodeRegion()
 {
 	bool is_started_program_code = false;
 
@@ -81,6 +81,16 @@ inline bool TraceAnalyzer::isProgramCode(unsigned int address)
 {
 	// TODO: should use more correctly method, this is temporaly method...orz
 	return address < 0x60000000;
+}
+
+inline bool TraceAnalyzer::isInPrologueCode(unsigned int bb_id)
+{
+	return prologue_bb_range.first <= bb_id && bb_id <= prologue_bb_range.second;
+}
+
+inline bool TraceAnalyzer::isInEpilogueCode(unsigned int bb_id)
+{
+	return epilogue_bb_range.first <= bb_id && bb_id <= epilogue_bb_range.second;
 }
 
 unsigned int TraceAnalyzer::getReturnAddressOfCallInsn(std::shared_ptr<Instruction> call_insn)
