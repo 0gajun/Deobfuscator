@@ -168,6 +168,7 @@
     </ClCompile>
     <ClCompile Include="string_util.cpp" />
     <ClCompile Include="test.cpp" />
+    <ClCompile Include="trace_analyzer.cpp" />
     <ClCompile Include="trace_reader.cpp" />
   </ItemGroup>
   <ItemGroup>

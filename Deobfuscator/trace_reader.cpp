@@ -67,6 +67,7 @@ std::shared_ptr<TraceData> TraceReader::read()
 	return data;
 }
 
+// register basic block to Reader's TraceData object
 // return: registered basic block
 std::shared_ptr<BasicBlock> TraceReader::registerBasicBlock(std::shared_ptr<BasicBlock> bb)
 {

@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <map>
 #include <memory>
+#include <stack>
 
 class Instruction
 {
@@ -66,4 +67,30 @@ public:
 	bool openTraceFile(const std::string trace_file_path);
 
 	std::shared_ptr<TraceData> read();
+};
+
+class TraceAnalyzer
+{
+private:
+	class CallStackInfo
+	{
+	public:
+		const unsigned int caller_bb_id;
+		const unsigned int ret_addr;
+		CallStackInfo(unsigned int caller_bb_id, unsigned int ret_addr);
+	};
+
+	TraceData trace;
+	std::stack<std::shared_ptr<CallStackInfo>> call_stack;
+	std::pair<unsigned int, unsigned int> prologue_bb_range;
+	std::pair<unsigned int, unsigned int> epilogue_bb_range;
+
+	unsigned int getReturnAddressOfCallInsn(std::shared_ptr<Instruction> call_insn);
+	void detectPrologueEpilogueCode();
+	inline bool isProgramCode(unsigned int address);
+
+public:
+	TraceAnalyzer(TraceData data);
+
+	bool analyze();
 };
