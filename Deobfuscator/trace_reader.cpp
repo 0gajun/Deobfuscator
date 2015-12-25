@@ -39,6 +39,7 @@ std::shared_ptr<TraceData> TraceReader::read()
 	std::string line;
 	std::string code_bytes;
 	std::vector<std::string> insn_buffer;
+	std::shared_ptr<BasicBlock> prev_bb;
 	while (std::getline(ifs, line)) {
 		if (line.empty()) {
 			continue;
@@ -47,8 +48,16 @@ std::shared_ptr<TraceData> TraceReader::read()
 			std::getline(ifs, code_bytes);
 			std::shared_ptr<BasicBlock> bb = registerBasicBlock(parseBasicBlock(bb_id, insn_buffer, code_bytes));
 
+			// set flow information
+			if (prev_bb) {
+				prev_bb->next_bbs.insert(std::unordered_map<int, std::shared_ptr<BasicBlock>>::value_type(bb_id, bb));
+				prev_bb->next_bb_addr = bb->head_insn_addr;
+				bb->prev_bbs.insert(std::unordered_map<int, std::shared_ptr<BasicBlock>>::value_type(bb_id - 1, prev_bb));
+			}
+
 			insn_buffer.clear();
 			code_bytes.clear();
+			prev_bb = bb;
 			bb_id++;
 			continue;
 		}
