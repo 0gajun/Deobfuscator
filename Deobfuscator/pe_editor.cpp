@@ -74,17 +74,16 @@ int PEEditor::calcHeaderSize()
 		* pe_fmt.nt_headers.OptionalHeader.FileAlignment;
 }
 
-void PEEditor::addSection(IMAGE_SECTION_HEADER section_header,
-	char* section_virtual_data, int section_virtual_size)
+void PEEditor::addSection(IMAGE_SECTION_HEADER section_header, std::vector<char> section_virtual_data)
 {
 	int section_raw_size 
-		= (section_virtual_size / pe_fmt.nt_headers.OptionalHeader.FileAlignment + 1)
+		= (section_virtual_data.size() / pe_fmt.nt_headers.OptionalHeader.FileAlignment + 1)
 		* pe_fmt.nt_headers.OptionalHeader.FileAlignment;
 
 	std::vector<char> section_raw_data(section_raw_size);
 
 	memset(section_raw_data.data(), 0, section_raw_size);
-	memcpy(section_raw_data.data(), section_virtual_data, section_virtual_size);
+	memcpy(section_raw_data.data(), &section_virtual_data[0], section_virtual_data.size());
 
 	pe_fmt.section_headers.push_back(section_header);
 	pe_fmt.section_data.push_back(section_raw_data);
@@ -201,4 +200,35 @@ IMAGE_SECTION_HEADER PEEditor::SectionHeaderBuilder::build()
 	};
 	memcpy(header.Name, name, IMAGE_SIZEOF_SHORT_NAME);
 	return header;
+}
+
+PEEditor::ShadowSectionBuilder::ShadowSectionBuilder(unsigned int virtual_offset, unsigned int virtual_size)
+	: v_offset(virtual_offset), v_size(virtual_size)
+{
+}
+
+// return : virtual address of beginning of code
+unsigned int PEEditor::ShadowSectionBuilder::appendCode(std::vector<char> code)
+{
+	unsigned int virtual_address = v_offset + code_buffer.size;
+	code_buffer.insert(code_buffer.end(), code.begin(), code.end());
+	if (code.size() > v_size) {
+		// TODO: error
+	}
+	return virtual_address;
+}
+
+std::pair<IMAGE_SECTION_HEADER, std::vector<char>>
+	PEEditor::ShadowSectionBuilder::build(unsigned int pointer_to_raw_data, unsigned int size_of_raw_data)
+{
+	BYTE section_name[7] = {'.', 's', 'h', 'a', 'd', 'o', 'w'};
+	IMAGE_SECTION_HEADER section_header
+		= PEEditor::SectionHeaderBuilder().setName(section_name, 7)
+		->setVirtualSize(code_buffer.size())
+		->setVirtualAddress(v_offset)
+		->setSizeOfRawData(size_of_raw_data)
+		->setPointerToRawData(pointer_to_raw_data)
+		->setCharacteristcs(IMAGE_SCN_CNT_CODE | IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_MEM_READ)
+		->build();
+	return std::pair<IMAGE_SECTION_HEADER, std::vector<char>>(section_header, code_buffer);
 }

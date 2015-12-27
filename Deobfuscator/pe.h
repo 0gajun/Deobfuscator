@@ -90,7 +90,7 @@ public:
 	PEFormat* result();
 
 	// modification methods
-	void addSection(IMAGE_SECTION_HEADER section_header, char * section_virtual_data, int section_vitrual_size);
+	void addSection(IMAGE_SECTION_HEADER section_header, std::vector<char> section_virtual_data);
 	boolean overwriteCode(char * new_value, int size, int raw_addr);
 
 	class SectionHeaderBuilder
@@ -123,5 +123,20 @@ public:
 		PEEditor::SectionHeaderBuilder * setNumberOfLinenumbers(WORD num);
 		PEEditor::SectionHeaderBuilder * setCharacteristcs(DWORD flag);
 		IMAGE_SECTION_HEADER build();
+	};
+
+	class ShadowSectionBuilder
+	{
+	private:
+		const unsigned int v_offset;
+		const unsigned int v_size;
+		std::vector<char> code_buffer;
+
+	public:
+		ShadowSectionBuilder(unsigned int virtual_offset, unsigned int virtual_size);
+
+		unsigned int appendCode(std::vector<char> code);
+
+		std::pair<IMAGE_SECTION_HEADER, std::vector<char>> build(unsigned int pointer_to_raw_data, unsigned int size_of_raw_data);
 	};
 };
