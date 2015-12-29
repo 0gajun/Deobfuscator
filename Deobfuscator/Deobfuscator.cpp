@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "pe.h"
+#include "trace.h"
 #include <iostream>
 using namespace std;
 
@@ -21,11 +22,20 @@ int main(int argc, char** argv)
 	}
 	PEFormat pe_fmt = reader->getPEFormat();
 
+	// Analyze
+	TraceReader trace_reader;
+	trace_reader.openTraceFile("C:\\Users\\ogamal\\Documents\\nrc.log");
+	std::shared_ptr<TraceData> data = trace_reader.read();
+	TraceAnalyzer analyzer(*data);
+	std::unique_ptr<TraceAnalysisResult> analysis_result = analyzer.analyze();
+
 	// Edit
-	PEEditor editor = PEEditor(pe_fmt);
+	PEEditor editor(pe_fmt, std::move(analysis_result));
+	PEFormat *modified_pe = editor.result();
 
 	// Create new section
-	char new_code[1] = { 0xC3 };
+	/*
+	std::vector<char> new_code({ (char)(unsigned char)0xC3 });
 	PEEditor::SectionHeaderBuilder b = PEEditor::SectionHeaderBuilder();
 	b.setName((BYTE *)string(".shadow").c_str(), 7)
 		->setPointerToRawData(0xC00)
@@ -35,8 +45,9 @@ int main(int argc, char** argv)
 		->setCharacteristcs(0x60000020);
 	IMAGE_SECTION_HEADER shadow_section_header = b.build();
 
-	editor.addSection(shadow_section_header, new_code, 1);
+	editor.addSection(shadow_section_header, new_code);
 	PEFormat *modified_pe = editor.result();
+	*/
 
 	// Write
 	PEWriter::Builder writer_builder;

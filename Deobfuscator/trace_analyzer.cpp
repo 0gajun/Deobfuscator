@@ -7,9 +7,15 @@ TraceAnalyzer::TraceAnalyzer(TraceData data) : trace(data)
 {
 }
 
-bool TraceAnalyzer::analyze()
+TraceAnalysisResult::TraceAnalysisResult()
 {
-	detectPrologueEpilogueCodeRegion();
+	invoker = std::make_unique<CommandInvoker>();
+}
+
+std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
+{
+	std::unique_ptr<TraceAnalysisResult> result = std::make_unique<TraceAnalysisResult>();
+	result->original_entry_point_vaddr = detectPrologueEpilogueCodeRegion();
 
 	for (auto it = trace.basic_blocks.begin(); it != trace.basic_blocks.end(); it++) {
 		std::shared_ptr<BasicBlock> bb = it->second;
@@ -34,6 +40,13 @@ bool TraceAnalyzer::analyze()
 			bool is_call_stack_tampered = (ret_addr != call_stack.top()->ret_addr);
 
 			if (is_call_stack_tampered) {
+				std::shared_ptr<BasicBlock> caller = trace.basic_blocks.at(call_stack.top()->caller_bb_id);
+				std::shared_ptr<BasicBlock> callee = bb;
+				std::shared_ptr<BasicBlock> jmp_target = trace.basic_blocks.at(bb_id + 1);
+				std::shared_ptr<NonReturningCallCommand> cmd
+					= std::make_shared<NonReturningCallCommand>(caller, callee, jmp_target);
+				result->invoker->addCommand(cmd);
+
 				std::cout << "call_stack_tampered! : "  << bb_id << std::endl;
 				std::cout << "opcode: " << last_insn->opcode << std::endl;
 				std::cout << "addr: " << std::hex << last_insn->addr << std::endl;
@@ -42,9 +55,11 @@ bool TraceAnalyzer::analyze()
 			call_stack.pop();
 		}
 	}
+	return result;
 }
 
-void TraceAnalyzer::detectPrologueEpilogueCodeRegion()
+// ret value: original entry point's virtual address
+unsigned int TraceAnalyzer::detectPrologueEpilogueCodeRegion()
 {
 	bool is_started_program_code = false;
 
@@ -53,6 +68,8 @@ void TraceAnalyzer::detectPrologueEpilogueCodeRegion()
 	// move iterator to program code
 	for (; !isProgramCode(it->second->head_insn_addr); it++) {
 	}
+
+	unsigned int original_entry_point_vaddr = it->second->head_insn_addr;
 
 	prologue_bb_range.first = 0;
 	prologue_bb_range.second = it->first - 1;
@@ -75,6 +92,8 @@ void TraceAnalyzer::detectPrologueEpilogueCodeRegion()
 
 	epilogue_bb_range.first = non_program_code_start_bb_id;
 	epilogue_bb_range.second = trace.basic_blocks.size() - 1;
+
+	return original_entry_point_vaddr;
 }
 
 inline bool TraceAnalyzer::isProgramCode(unsigned int address)

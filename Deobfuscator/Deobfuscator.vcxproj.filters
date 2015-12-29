@@ -48,6 +48,9 @@
     <ClInclude Include="test.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="command.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -71,13 +74,16 @@
     <ClCompile Include="string_util.cpp">
       <Filter>ソース ファイル\util</Filter>
     </ClCompile>
-    <ClCompile Include="basic_block.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="test.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
     <ClCompile Include="trace_analyzer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="command.cpp">
+      <Filter>ソース ファイル\pe</Filter>
+    </ClCompile>
+    <ClCompile Include="trace.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

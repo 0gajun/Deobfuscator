@@ -5,6 +5,9 @@
 #include <fstream>
 #include <tuple>
 
+class TraceAnalysisResult;
+#include "trace.h"
+
 class PEFormat {
 public:
 	IMAGE_DOS_HEADER			dos_header;
@@ -77,21 +80,32 @@ class PEEditor
 {
 private:
 	PEFormat pe_fmt;
+	std::unique_ptr<TraceAnalysisResult> analysis_result;
 	boolean isValidFormat();
 	boolean isValidSectionAlignment();
 	boolean isValidFileAlignment();
 	void commit();
 	int calcImageSize();
 	int calcHeaderSize();
+	void execCommandIfNeeded();
+	unsigned int getRealImageBase();
 public:
 	PEEditor(PEFormat pe_fmt);
+	PEEditor(PEFormat pe_fmt, std::unique_ptr<TraceAnalysisResult> analysis_result);
 	~PEEditor();
 
 	PEFormat* result();
 
 	// modification methods
-	void addSection(IMAGE_SECTION_HEADER section_header, std::vector<char> section_virtual_data);
-	boolean overwriteCode(char * new_value, int size, int raw_addr);
+	void addSection(IMAGE_SECTION_HEADER section_header, std::vector<unsigned char> section_virtual_data);
+	boolean overwriteCode(std::vector<unsigned char> new_code, int raw_addr);
+
+	// For shadow section
+	void initializeShadowSectionBuilder(unsigned int size);
+	unsigned int appendShadowSectionCode(std::vector<unsigned char> code);
+
+	unsigned int convertFromVirtToRawAddr(unsigned int virt_addr);
+	unsigned int convertToOriginalVirtAddr(unsigned int virt_addr);
 
 	class SectionHeaderBuilder
 	{
@@ -130,13 +144,19 @@ public:
 	private:
 		const unsigned int v_offset;
 		const unsigned int v_size;
-		std::vector<char> code_buffer;
+		std::vector<unsigned char> code_buffer;
 
 	public:
 		ShadowSectionBuilder(unsigned int virtual_offset, unsigned int virtual_size);
 
-		unsigned int appendCode(std::vector<char> code);
+		unsigned int appendCode(std::vector<unsigned char> code);
+		bool hasCode();
+		unsigned int requiredSize();
 
-		std::pair<IMAGE_SECTION_HEADER, std::vector<char>> build(unsigned int pointer_to_raw_data, unsigned int size_of_raw_data);
+		std::pair<IMAGE_SECTION_HEADER, std::vector<unsigned char>> build(unsigned int pointer_to_raw_data, unsigned int size_of_raw_data);
 	};
+
+
+private:
+	std::unique_ptr<ShadowSectionBuilder> shadow_sec_builder;
 };

@@ -9,6 +9,15 @@
 #include <memory>
 #include <stack>
 
+#define SHORT_JMP_INSN_SIZE 2
+#define NEAR_JMP_INSN_SIZE 5
+#define OPCODE_SHORT_JMP 0xEB
+#define OPCODE_NEAR_JMP 0xE9
+
+class CommandInvoker;
+#include "command.h"
+class PEEditor;
+
 class Instruction
 {
 public:
@@ -16,7 +25,47 @@ public:
 	std::string		prefix;
 	std::string		opcode;
 	std::vector<std::string> operands;
-	std::vector<char> binary;
+	std::vector<unsigned char> binary;
+
+	class Builder
+	{
+	protected:
+		std::unique_ptr<Instruction> insn;
+		void appendCode(std::vector<unsigned char> code);
+	public:
+		Builder(std::vector<unsigned char> binary_code);
+		Builder();
+		~Builder();
+
+		Builder* setAddress(unsigned int addr);
+		Builder* setPrefix(std::string prefix);
+		Builder* setOpcode(std::string opcode);
+		Builder* addOperand(std::string operand);
+
+		virtual Instruction build();
+	};
+
+	class JmpInsnBuilder : Builder
+	{
+	private:
+		unsigned int jmp_target_addr;
+	public:
+		JmpInsnBuilder(unsigned int address, unsigned int jmp_target_addr);
+
+		Instruction build(const std::shared_ptr<PEEditor> editor);
+	};
+
+	class PushInsnBuilder : Builder
+	{
+	private:
+		unsigned int imm;
+
+	public:
+		PushInsnBuilder(unsigned int imm32);
+		PushInsnBuilder(unsigned short imm16);
+
+		Instruction build();
+	};
 };
 
 class BasicBlock
@@ -33,6 +82,7 @@ public:
 	std::unordered_map<int, std::shared_ptr<BasicBlock>> next_bbs; // map<original_id, ptr>
 
 	BasicBlock(const int id);
+	std::vector<char> getCode();
 };
 
 class TraceData
@@ -40,6 +90,14 @@ class TraceData
 public:
 	std::map<unsigned int, std::shared_ptr<BasicBlock>> basic_blocks;
 	std::map<unsigned int, std::shared_ptr<BasicBlock>> addr_bb_map;
+};
+
+class TraceAnalysisResult
+{
+public:
+	TraceAnalysisResult();
+	std::unique_ptr<CommandInvoker> invoker;
+	unsigned int original_entry_point_vaddr;
 };
 
 class TraceReader
@@ -86,7 +144,7 @@ private:
 	std::pair<unsigned int, unsigned int> epilogue_bb_range;
 
 	unsigned int getReturnAddressOfCallInsn(std::shared_ptr<Instruction> call_insn);
-	void detectPrologueEpilogueCodeRegion();
+	unsigned int detectPrologueEpilogueCodeRegion();
 
 	bool isProgramCode(unsigned int address);
 	bool isInPrologueCode(unsigned int bb_id);
@@ -95,5 +153,5 @@ private:
 public:
 	TraceAnalyzer(TraceData data);
 
-	bool analyze();
+	std::unique_ptr<TraceAnalysisResult> analyze();
 };

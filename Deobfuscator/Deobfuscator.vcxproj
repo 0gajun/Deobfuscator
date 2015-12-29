@@ -147,6 +147,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="command.h" />
     <ClInclude Include="pe.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="string_util.h" />
@@ -155,7 +156,7 @@
     <ClInclude Include="trace.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="basic_block.cpp" />
+    <ClCompile Include="command.cpp" />
     <ClCompile Include="Deobfuscator.cpp" />
     <ClCompile Include="pe_editor.cpp" />
     <ClCompile Include="pe_reader.cpp" />
@@ -168,6 +169,7 @@
     </ClCompile>
     <ClCompile Include="string_util.cpp" />
     <ClCompile Include="test.cpp" />
+    <ClCompile Include="trace.cpp" />
     <ClCompile Include="trace_analyzer.cpp" />
     <ClCompile Include="trace_reader.cpp" />
   </ItemGroup>

@@ -2,10 +2,16 @@
 #include "pe.h"
 #include <sstream>
 #include <algorithm>
+#include <iostream>
 
-PEEditor::PEEditor(PEFormat pe)
+PEEditor::PEEditor(PEFormat pe) : pe_fmt(pe)
 {
-	this->pe_fmt = pe;
+}
+
+PEEditor::PEEditor(PEFormat pe,
+	std::unique_ptr<TraceAnalysisResult> analysis_result)
+	: pe_fmt(pe), analysis_result(std::move(analysis_result))
+{
 }
 
 PEEditor::~PEEditor()
@@ -41,6 +47,8 @@ boolean PEEditor::isValidFileAlignment()
 
 void PEEditor::commit()
 {
+	execCommandIfNeeded();
+
 	// Update number of sections
 	pe_fmt.nt_headers.FileHeader.NumberOfSections = pe_fmt.number_of_sections;
 
@@ -74,7 +82,41 @@ int PEEditor::calcHeaderSize()
 		* pe_fmt.nt_headers.OptionalHeader.FileAlignment;
 }
 
-void PEEditor::addSection(IMAGE_SECTION_HEADER section_header, std::vector<char> section_virtual_data)
+void PEEditor::execCommandIfNeeded()
+{
+	if (!analysis_result->invoker->hasCommand()) {
+		return;
+	}
+	;
+	analysis_result->invoker->invoke(std::shared_ptr<PEEditor>(this, [](PEEditor *) {}));
+
+	if (shadow_sec_builder && shadow_sec_builder->hasCode()) {
+		unsigned int required_size = shadow_sec_builder->requiredSize();
+		unsigned int pointer_to_raw = 0;
+		for (IMAGE_SECTION_HEADER header : pe_fmt.section_headers) {
+			pointer_to_raw = max(pointer_to_raw, header.PointerToRawData + header.SizeOfRawData);
+		}
+		unsigned int raw_size = (required_size / pe_fmt.nt_headers.OptionalHeader.FileAlignment + 1)
+			* pe_fmt.nt_headers.OptionalHeader.FileAlignment;
+
+		std::pair<IMAGE_SECTION_HEADER, std::vector<unsigned char>> shadow_section
+			= shadow_sec_builder->build(pointer_to_raw, raw_size);
+		addSection(shadow_section.first, shadow_section.second);
+	}
+}
+
+unsigned int PEEditor::getRealImageBase()
+{
+	if (analysis_result->original_entry_point_vaddr == 0) {
+		std::cout
+			<< "Cannnot use PEEditor::getRealImageBase in this context...abort()"
+			<< std::endl;
+		abort();
+	}
+	return analysis_result->original_entry_point_vaddr - pe_fmt.nt_headers.OptionalHeader.AddressOfEntryPoint;
+}
+
+void PEEditor::addSection(IMAGE_SECTION_HEADER section_header, std::vector<unsigned char> section_virtual_data)
 {
 	int section_raw_size 
 		= (section_virtual_data.size() / pe_fmt.nt_headers.OptionalHeader.FileAlignment + 1)
@@ -90,18 +132,75 @@ void PEEditor::addSection(IMAGE_SECTION_HEADER section_header, std::vector<char>
 	pe_fmt.number_of_sections++;
 }
 
-boolean PEEditor::overwriteCode(char *new_code, int size, int raw_addr)
+boolean PEEditor::overwriteCode(std::vector<unsigned char> new_code, int raw_addr)
 {
 	for (unsigned int i = 0; i < pe_fmt.section_headers.size(); i++) {
 		int section_start_addr = pe_fmt.section_headers[i].PointerToRawData;
 		int section_end_addr = section_start_addr + pe_fmt.section_headers[i].SizeOfRawData - 1;
 
-		if (section_start_addr <= raw_addr && raw_addr + size <= section_end_addr) {
-			memcpy(pe_fmt.section_data[i].data(), new_code, size);
+		if (section_start_addr <= raw_addr && raw_addr + new_code.size() <= section_end_addr) {
+			std::cout << "overwriteCode: " << raw_addr << std::endl;
+			std::cout << (int)pe_fmt.section_data[i].data()[raw_addr - section_start_addr] << std::endl;
+			memcpy(&pe_fmt.section_data[i].data()[raw_addr - section_start_addr], new_code.data(), new_code.size());
+			std::cout << (int)pe_fmt.section_data[i].data()[raw_addr - section_start_addr] << std::endl;
 			return true;
 		}
 	}
 	return false;
+}
+
+void PEEditor::initializeShadowSectionBuilder(unsigned int size)
+{
+	unsigned int max_section_size = 0;
+	for (IMAGE_SECTION_HEADER header : pe_fmt.section_headers) {
+		max_section_size = max(max_section_size, header.VirtualAddress + header.Misc.VirtualSize);
+	}
+
+	unsigned int shadow_section_voffset 
+		= (max_section_size / pe_fmt.nt_headers.OptionalHeader.SectionAlignment + 1)
+		* pe_fmt.nt_headers.OptionalHeader.SectionAlignment;
+
+	shadow_sec_builder = std::make_unique<ShadowSectionBuilder>(shadow_section_voffset, size);
+}
+
+unsigned int PEEditor::appendShadowSectionCode(std::vector<unsigned char> code)
+{
+	return shadow_sec_builder->appendCode(code);
+}
+
+unsigned int PEEditor::convertFromVirtToRawAddr(unsigned int virt_addr)
+{
+	unsigned int real_image_base = getRealImageBase();
+	bool is_header_found = false;
+	IMAGE_SECTION_HEADER header;
+	for (IMAGE_SECTION_HEADER h : pe_fmt.section_headers) {
+		if (h.VirtualAddress <= virt_addr - real_image_base && virt_addr - real_image_base <= h.VirtualAddress + h.Misc.VirtualSize) {
+			is_header_found = true;
+			header = h;
+			break;
+		}
+	}
+
+	if (!is_header_found) {
+		std::cout << "couldn't find header in PEEditor::convertFromVirtToRawAddr" << std::endl;
+		abort();
+	}
+
+	return header.PointerToRawData + virt_addr - analysis_result->original_entry_point_vaddr
+		+ pe_fmt.nt_headers.OptionalHeader.AddressOfEntryPoint - header.VirtualAddress;
+}
+
+unsigned int PEEditor::convertToOriginalVirtAddr(unsigned int virt_addr)
+{
+	unsigned int real_image_base = getRealImageBase();
+	unsigned int result;
+	if (virt_addr >= real_image_base) {
+		result = virt_addr - real_image_base;
+	}
+	else {
+		result = virt_addr;
+	}
+	return result;
 }
 
 /*
@@ -208,9 +307,9 @@ PEEditor::ShadowSectionBuilder::ShadowSectionBuilder(unsigned int virtual_offset
 }
 
 // return : virtual address of beginning of code
-unsigned int PEEditor::ShadowSectionBuilder::appendCode(std::vector<char> code)
+unsigned int PEEditor::ShadowSectionBuilder::appendCode(std::vector<unsigned char> code)
 {
-	unsigned int virtual_address = v_offset + code_buffer.size;
+	unsigned int virtual_address = v_offset + code_buffer.size();
 	code_buffer.insert(code_buffer.end(), code.begin(), code.end());
 	if (code.size() > v_size) {
 		// TODO: error
@@ -218,7 +317,17 @@ unsigned int PEEditor::ShadowSectionBuilder::appendCode(std::vector<char> code)
 	return virtual_address;
 }
 
-std::pair<IMAGE_SECTION_HEADER, std::vector<char>>
+bool PEEditor::ShadowSectionBuilder::hasCode()
+{
+	return !code_buffer.empty();
+}
+
+unsigned int PEEditor::ShadowSectionBuilder::requiredSize()
+{
+	return code_buffer.size();
+}
+
+std::pair<IMAGE_SECTION_HEADER, std::vector<unsigned char>>
 	PEEditor::ShadowSectionBuilder::build(unsigned int pointer_to_raw_data, unsigned int size_of_raw_data)
 {
 	BYTE section_name[7] = {'.', 's', 'h', 'a', 'd', 'o', 'w'};
@@ -230,5 +339,5 @@ std::pair<IMAGE_SECTION_HEADER, std::vector<char>>
 		->setPointerToRawData(pointer_to_raw_data)
 		->setCharacteristcs(IMAGE_SCN_CNT_CODE | IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_MEM_READ)
 		->build();
-	return std::pair<IMAGE_SECTION_HEADER, std::vector<char>>(section_header, code_buffer);
+	return std::pair<IMAGE_SECTION_HEADER, std::vector<unsigned char>>(section_header, code_buffer);
 }
