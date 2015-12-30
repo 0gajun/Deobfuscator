@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "trace.h"
 #include <iostream>
 
@@ -29,8 +29,38 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 			break;
 		}
 
+		std::shared_ptr<Instruction> last_insn = bb->insn_list.back();
+
+		// Check Overlapping functions and basic blocks
+		// reduction only jmp bb
+		if (bb->insn_list.size() == 1 && last_insn->opcode == "jmp") {
+			int reduction_count = 0;
+			while (it->second->insn_list.size() == 1 && it->second->insn_list.back()->opcode == "jmp") {
+				reduction_count++;
+				it++;
+			}
+			std::shared_ptr<BasicBlock> prev_bb = trace.basic_blocks.at(bb_id - 1);
+			std::shared_ptr<RedundantJmpReductionCommand> cmd;
+
+			if (prev_bb->insn_list.back()->opcode == "jmp") {
+				cmd = std::make_shared<RedundantJmpReductionCommand>(prev_bb, it->second);
+			}
+			else {
+				reduction_count--;
+				if (reduction_count > 0) {
+					cmd = std::make_shared<RedundantJmpReductionCommand>(bb, it->second);
+				}
+			}
+
+			if (cmd) {
+				result->invoker->addCommand(cmd);
+			}
+			// decrement iterator because iterator will be incremented after continue;
+			it--;
+			continue;
+		}
+
 		// Check call stack tampering
-		std::shared_ptr<Instruction> last_insn = bb->insn_list[bb->insn_list.size() - 1];
 		if (last_insn->opcode == "call") {
 			unsigned int ret_addr = getReturnAddressOfCallInsn(last_insn);
 			call_stack.push(std::make_shared<CallStackInfo>(bb_id, ret_addr));
@@ -41,11 +71,12 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 			bool is_call_stack_tampered = (ret_addr != call_stack.top()->ret_addr);
 
 			if (is_call_stack_tampered) {
+				std::cout << "caller: " << call_stack.top()->caller_bb_id << ", callee: " << bb_id << std::endl;
 				if (call_stack.top()->caller_bb_id + 1 != bb_id) {
-					// TODO: BasicBlock‚ğ’´‚¦‚½Non-Returning Calls‚É‚à‘Î‰‚·‚é
+					// TODO: BasicBlockã‚’è¶…ãˆãŸNon-Returning Callsã«ã‚‚å¯¾å¿œã™ã‚‹
 					std::cout << "call stack is tampered. However, this deobfuscator version"
 						<< " cannot fix non-returning call over basic block." << std::endl;
-					std::cout << "So, skip...(addr: " << std::hex << bb->head_insn_addr << std::endl;
+					std::cout << "So, skip...(addr: 0x" << std::hex << bb->head_insn_addr << std::endl;
 				}
 				else {
 					std::shared_ptr<BasicBlock> caller = trace.basic_blocks.at(call_stack.top()->caller_bb_id);

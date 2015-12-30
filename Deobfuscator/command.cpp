@@ -105,3 +105,31 @@ unsigned int CommandInvoker::estimateShadowSectionSize()
 	}
 	return estimate_size;
 }
+
+RedundantJmpReductionCommand::RedundantJmpReductionCommand(std::shared_ptr<BasicBlock> from_bb, std::shared_ptr<BasicBlock> to_bb)
+	: from_bb(from_bb), to_bb(to_bb)
+{
+}
+
+void RedundantJmpReductionCommand::execute(std::shared_ptr<PEEditor> editor)
+{
+	// validation
+	std::shared_ptr<Instruction> from_bb_last_insn = from_bb->insn_list.back();
+	if (from_bb_last_insn->opcode != "jmp") {
+		std::cout << "invalid instruction was passed in RedundantJmpReductionCommand::execute()" << std::endl;
+		abort();
+	}
+	unsigned int jmp_base_addr = editor->convertToOriginalVirtAddr(from_bb_last_insn->addr + from_bb_last_insn->binary.size());
+	unsigned int jmp_target_addr = editor->convertToOriginalVirtAddr(to_bb->head_insn_addr);
+	
+	Instruction new_jmp_insn
+		= Instruction::JmpInsnBuilder(from_bb_last_insn->addr, jmp_target_addr)
+		.build(editor);
+
+	if (new_jmp_insn.binary.size() > from_bb_last_insn->binary.size()) {
+		std::cout << "new jmp code is larget than old jmp code. So, cannot overwrite it! skip..." << std::endl;
+		return;
+	}
+
+	editor->overwriteCode(new_jmp_insn.binary, editor->convertFromVirtToRawAddr(from_bb_last_insn->addr));
+}

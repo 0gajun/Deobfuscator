@@ -1,4 +1,4 @@
-// Deobfuscator.cpp : ƒRƒ“ƒ\[ƒ‹ ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ÌƒGƒ“ƒgƒŠ ƒ|ƒCƒ“ƒg‚ğ’è‹`‚µ‚Ü‚·B
+ï»¿// Deobfuscator.cpp : ã‚³ãƒ³ã‚½ãƒ¼ãƒ« ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®ã‚¨ãƒ³ãƒˆãƒª ãƒã‚¤ãƒ³ãƒˆã‚’å®šç¾©ã—ã¾ã™ã€‚
 //
 
 #include "stdafx.h"
@@ -24,7 +24,7 @@ int main(int argc, char** argv)
 
 	// Analyze
 	TraceReader trace_reader;
-	trace_reader.openTraceFile("C:\\Users\\ogamal\\Documents\\nrc.log");
+	trace_reader.openTraceFile("C:\\Users\\ogamal\\Documents\\trace_data\\overlapping_functions.log");
 	std::shared_ptr<TraceData> data = trace_reader.read();
 	TraceAnalyzer analyzer(*data);
 	std::unique_ptr<TraceAnalysisResult> analysis_result = analyzer.analyze();
@@ -52,7 +52,7 @@ int main(int argc, char** argv)
 	// Write
 	PEWriter::Builder writer_builder;
 	PEWriter *writer = writer_builder
-		.setOutputFilePath("\\Users\\ogamal\\Documents\\hoge.exe")
+		.setOutputFilePath("\\Users\\ogamal\\Documents\\hoge_overlap.exe")
 		->setPEFormat(modified_pe)
 		->build();
 	if (writer == nullptr) {

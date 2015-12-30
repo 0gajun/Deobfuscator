@@ -46,6 +46,16 @@ class OverlappingFunctionAndBasicBlockCommand : public PECommand
 
 };
 
+class RedundantJmpReductionCommand : public PECommand
+{
+private:
+	const std::shared_ptr<BasicBlock> from_bb;
+	const std::shared_ptr<BasicBlock> to_bb;
+public:
+	RedundantJmpReductionCommand(std::shared_ptr<BasicBlock> from_bb, std::shared_ptr<BasicBlock> to_bb);
+	void execute(std::shared_ptr<PEEditor> editor) override;
+};
+
 class CommandInvoker
 {
 private:
