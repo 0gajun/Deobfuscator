@@ -13,7 +13,7 @@
 
 TraceReader::TraceReader()
 {
-	this->data = std::make_shared<TraceData>();
+	this->data = std::make_unique<TraceData>();
 }
 
 TraceReader::~TraceReader()
@@ -29,7 +29,7 @@ bool TraceReader::openTraceFile(const std::string trace_file_path)
 	return ifs.is_open();
 }
 
-std::shared_ptr<TraceData> TraceReader::read()
+std::unique_ptr<TraceData> TraceReader::read()
 {
 	if (!ifs.is_open()) {
 		throw std::exception::exception("file isn't opened.");
@@ -64,7 +64,7 @@ std::shared_ptr<TraceData> TraceReader::read()
 
 		insn_buffer.push_back(line);
 	}
-	return data;
+	return std::move(data);
 }
 
 // register basic block to Reader's TraceData object

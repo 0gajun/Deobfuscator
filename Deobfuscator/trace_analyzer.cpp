@@ -2,7 +2,7 @@
 #include "trace.h"
 #include <iostream>
 
-TraceAnalyzer::TraceAnalyzer(TraceData data) : trace(data)
+TraceAnalyzer::TraceAnalyzer(std::unique_ptr<TraceData> data) : trace(std::move(data))
 {
 }
 
@@ -16,7 +16,7 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 	std::unique_ptr<TraceAnalysisResult> result = std::make_unique<TraceAnalysisResult>();
 	result->original_entry_point_vaddr = detectPrologueEpilogueCodeRegion();
 
-	for (auto it = trace.basic_blocks.begin(); it != trace.basic_blocks.end(); it++) {
+	for (auto it = trace->basic_blocks.begin(); it != trace->basic_blocks.end(); it++) {
 		std::shared_ptr<BasicBlock> bb = it->second;
 		const unsigned int bb_id = it->first;
 
@@ -33,7 +33,7 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 		// Check Overlapping functions and basic blocks
 		// reduction bbs which has only one basic block
 		if (bb->insn_list.size() == 1 && last_insn->opcode == "jmp") {
-			std::shared_ptr<BasicBlock> prev_bb = trace.basic_blocks.at(bb_id - 1);
+			std::shared_ptr<BasicBlock> prev_bb = trace->basic_blocks.at(bb_id - 1);
 			int reduction_count = 0;
 
 			// move iterator to the bb which doesn't have only one jmp
@@ -69,7 +69,7 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 		}
 
 		if (last_insn->opcode == "ret") {
-			unsigned int ret_addr = trace.basic_blocks.at(bb_id + 1)->head_insn_addr;
+			unsigned int ret_addr = trace->basic_blocks.at(bb_id + 1)->head_insn_addr;
 			bool is_call_stack_tampered = (ret_addr != call_stack.top()->ret_addr);
 
 			if (is_call_stack_tampered) {
@@ -81,9 +81,9 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 					std::cout << "So, skip...(addr: 0x" << std::hex << bb->head_insn_addr << std::endl;
 				}
 				else {
-					std::shared_ptr<BasicBlock> caller = trace.basic_blocks.at(call_stack.top()->caller_bb_id);
+					std::shared_ptr<BasicBlock> caller = trace->basic_blocks.at(call_stack.top()->caller_bb_id);
 					std::shared_ptr<BasicBlock> callee = bb;
-					std::shared_ptr<BasicBlock> jmp_target = trace.basic_blocks.at(bb_id + 1);
+					std::shared_ptr<BasicBlock> jmp_target = trace->basic_blocks.at(bb_id + 1);
 					std::shared_ptr<NonReturningCallCommand> cmd
 						= std::make_shared<NonReturningCallCommand>(caller, callee, jmp_target);
 					result->invoker->addCommand(cmd);
@@ -100,7 +100,7 @@ unsigned int TraceAnalyzer::detectPrologueEpilogueCodeRegion()
 {
 	bool is_started_program_code = false;
 
-	auto it = trace.basic_blocks.begin();
+	auto it = trace->basic_blocks.begin();
 
 	// move iterator to program code
 	for (; !isProgramCode(it->second->head_insn_addr); it++) {
@@ -114,7 +114,7 @@ unsigned int TraceAnalyzer::detectPrologueEpilogueCodeRegion()
 	unsigned int non_program_code_start_bb_id = 0;
 
 	// detect epilogue code
-	for (; it != trace.basic_blocks.end(); it++) {
+	for (; it != trace->basic_blocks.end(); it++) {
 		unsigned int bb_addr = it->second->head_insn_addr;
 
 		if (non_program_code_start_bb_id == 0 && !isProgramCode(bb_addr)) {
@@ -128,7 +128,7 @@ unsigned int TraceAnalyzer::detectPrologueEpilogueCodeRegion()
 	}
 
 	epilogue_bb_range.first = non_program_code_start_bb_id;
-	epilogue_bb_range.second = trace.basic_blocks.size() - 1;
+	epilogue_bb_range.second = trace->basic_blocks.size() - 1;
 
 	return original_entry_point_vaddr;
 }

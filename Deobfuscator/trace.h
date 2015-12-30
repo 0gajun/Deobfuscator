@@ -104,7 +104,7 @@ class TraceReader
 {
 private:
 	std::ifstream ifs;
-	std::shared_ptr<TraceData> data;
+	std::unique_ptr<TraceData> data;
 
 	std::shared_ptr<BasicBlock> registerBasicBlock(std::shared_ptr<BasicBlock> bb);
 	std::shared_ptr<BasicBlock> registerNewBasicBlock(std::shared_ptr<BasicBlock> bb);
@@ -124,7 +124,7 @@ public:
 
 	bool openTraceFile(const std::string trace_file_path);
 
-	std::shared_ptr<TraceData> read();
+	std::unique_ptr<TraceData> read();
 };
 
 class TraceAnalyzer
@@ -138,7 +138,7 @@ private:
 		CallStackInfo(unsigned int caller_bb_id, unsigned int ret_addr);
 	};
 
-	TraceData trace;
+	std::unique_ptr<TraceData> trace;
 	std::stack<std::shared_ptr<CallStackInfo>> call_stack;
 	std::pair<unsigned int, unsigned int> prologue_bb_range;
 	std::pair<unsigned int, unsigned int> epilogue_bb_range;
@@ -151,7 +151,7 @@ private:
 	bool isInEpilogueCode(unsigned int bb_id);
 
 public:
-	TraceAnalyzer(TraceData data);
+	TraceAnalyzer(std::unique_ptr<TraceData> data);
 
 	std::unique_ptr<TraceAnalysisResult> analyze();
 };
