@@ -2,7 +2,6 @@
 #include "trace.h"
 #include <iostream>
 
-
 TraceAnalyzer::TraceAnalyzer(TraceData data) : trace(data)
 {
 }
@@ -32,24 +31,27 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 		std::shared_ptr<Instruction> last_insn = bb->insn_list.back();
 
 		// Check Overlapping functions and basic blocks
-		// reduction only jmp bb
+		// reduction bbs which has only one basic block
 		if (bb->insn_list.size() == 1 && last_insn->opcode == "jmp") {
+			std::shared_ptr<BasicBlock> prev_bb = trace.basic_blocks.at(bb_id - 1);
 			int reduction_count = 0;
+
+			// move iterator to the bb which doesn't have only one jmp
+			// (we call such that bb as target_bb below
 			while (it->second->insn_list.size() == 1 && it->second->insn_list.back()->opcode == "jmp") {
 				reduction_count++;
 				it++;
 			}
-			std::shared_ptr<BasicBlock> prev_bb = trace.basic_blocks.at(bb_id - 1);
-			std::shared_ptr<RedundantJmpReductionCommand> cmd;
 
+			std::shared_ptr<RedundantJmpReductionCommand> cmd;
 			if (prev_bb->insn_list.back()->opcode == "jmp") {
+				// can jmp to target_bb from prev_bb directly
 				cmd = std::make_shared<RedundantJmpReductionCommand>(prev_bb, it->second);
 			}
-			else {
-				reduction_count--;
-				if (reduction_count > 0) {
-					cmd = std::make_shared<RedundantJmpReductionCommand>(bb, it->second);
-				}
+			// check whether reduction is needed or not
+			// decrement reduction_count because use first jmp bb, so cannot reduce that block
+			else if (reduction_count - 1 > 0) {
+				cmd = std::make_shared<RedundantJmpReductionCommand>(bb, it->second);
 			}
 
 			if (cmd) {
@@ -60,7 +62,7 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 			continue;
 		}
 
-		// Check call stack tampering
+		// Check non-returning call
 		if (last_insn->opcode == "call") {
 			unsigned int ret_addr = getReturnAddressOfCallInsn(last_insn);
 			call_stack.push(std::make_shared<CallStackInfo>(bb_id, ret_addr));
