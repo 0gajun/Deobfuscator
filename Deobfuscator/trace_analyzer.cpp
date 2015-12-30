@@ -29,6 +29,7 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 			break;
 		}
 
+		// Check call stack tampering
 		std::shared_ptr<Instruction> last_insn = bb->insn_list[bb->insn_list.size() - 1];
 		if (last_insn->opcode == "call") {
 			unsigned int ret_addr = getReturnAddressOfCallInsn(last_insn);
@@ -40,17 +41,20 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 			bool is_call_stack_tampered = (ret_addr != call_stack.top()->ret_addr);
 
 			if (is_call_stack_tampered) {
-				std::shared_ptr<BasicBlock> caller = trace.basic_blocks.at(call_stack.top()->caller_bb_id);
-				std::shared_ptr<BasicBlock> callee = bb;
-				std::shared_ptr<BasicBlock> jmp_target = trace.basic_blocks.at(bb_id + 1);
-				std::shared_ptr<NonReturningCallCommand> cmd
-					= std::make_shared<NonReturningCallCommand>(caller, callee, jmp_target);
-				result->invoker->addCommand(cmd);
-
-				std::cout << "call_stack_tampered! : "  << bb_id << std::endl;
-				std::cout << "opcode: " << last_insn->opcode << std::endl;
-				std::cout << "addr: " << std::hex << last_insn->addr << std::endl;
-				std::cout << "caller: " << trace.basic_blocks.at(call_stack.top()->caller_bb_id)->tail_insn_addr << std::endl;
+				if (call_stack.top()->caller_bb_id + 1 != bb_id) {
+					// TODO: BasicBlock‚ð’´‚¦‚½Non-Returning Calls‚É‚à‘Î‰ž‚·‚é
+					std::cout << "call stack is tampered. However, this deobfuscator version"
+						<< " cannot fix non-returning call over basic block." << std::endl;
+					std::cout << "So, skip...(addr: " << std::hex << bb->head_insn_addr << std::endl;
+				}
+				else {
+					std::shared_ptr<BasicBlock> caller = trace.basic_blocks.at(call_stack.top()->caller_bb_id);
+					std::shared_ptr<BasicBlock> callee = bb;
+					std::shared_ptr<BasicBlock> jmp_target = trace.basic_blocks.at(bb_id + 1);
+					std::shared_ptr<NonReturningCallCommand> cmd
+						= std::make_shared<NonReturningCallCommand>(caller, callee, jmp_target);
+					result->invoker->addCommand(cmd);
+				}
 			}
 			call_stack.pop();
 		}
