@@ -108,6 +108,7 @@ void TraceReader::parseAndRegistrationBasicBlockWorker()
 // return: registered basic block
 std::shared_ptr<BasicBlock> TraceReader::registerBasicBlock(std::shared_ptr<BasicBlock> bb)
 {
+	std::lock_guard<std::mutex> lock(bb_registration_mutex);
 	if (existsSameBasicBlock(bb)) {
 		return registerExistingBasicBlock(bb);
 	}
@@ -121,11 +122,8 @@ std::shared_ptr<BasicBlock> TraceReader::registerNewBasicBlock(std::shared_ptr<B
 	auto bbs_entry = std::map<unsigned int, std::shared_ptr<BasicBlock>>::value_type(bb->original_id, bb);
 	auto bb_map_entry = std::map<unsigned int, std::shared_ptr<BasicBlock>>::value_type(bb->head_insn_addr, bb);
 
-	{
-		std::lock_guard<std::mutex> lock(bb_registration_mutex);
-		data->basic_blocks.insert(bbs_entry);
-		data->addr_bb_map.insert(bb_map_entry);
-	}
+	data->basic_blocks.insert(bbs_entry);
+	data->addr_bb_map.insert(bb_map_entry);
 
 	return bb;
 }
@@ -136,11 +134,7 @@ std::shared_ptr<BasicBlock> TraceReader::registerExistingBasicBlock(std::shared_
 	existing_bb->block_id_set.insert(bb->original_id);
 	auto bbs_entry = std::map<unsigned int, std::shared_ptr<BasicBlock>>::value_type(bb->original_id, existing_bb);
 
-	{
-		std::lock_guard<std::mutex> lock(bb_registration_mutex);
-		data->basic_blocks.insert(bbs_entry);
-	}
-
+	data->basic_blocks.insert(bbs_entry);
 	return existing_bb;
 }
 
