@@ -5,6 +5,12 @@ VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Deobfuscator", "Deobfuscator\Deobfuscator.vcxproj", "{A2798AF2-6706-404F-9441-5174DB0A78FA}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "capstone_static", "libs\capstone\msvc\capstone_static\capstone_static.vcxproj", "{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "capstone_dll", "libs\capstone\msvc\capstone_dll\capstone_dll.vcxproj", "{2171C0E8-4915-49B9-AC23-A484FA08C126}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libs", "libs", "{8E08D153-49EF-4DE5-BEFB-5F4448015401}"
+EndProject
 Global
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true
@@ -24,8 +30,28 @@ Global
 		{A2798AF2-6706-404F-9441-5174DB0A78FA}.Release|x64.Build.0 = Release|x64
 		{A2798AF2-6706-404F-9441-5174DB0A78FA}.Release|x86.ActiveCfg = Release|Win32
 		{A2798AF2-6706-404F-9441-5174DB0A78FA}.Release|x86.Build.0 = Release|Win32
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Debug|x64.ActiveCfg = Debug|x64
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Debug|x64.Build.0 = Debug|x64
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Debug|x86.ActiveCfg = Debug|Win32
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Debug|x86.Build.0 = Debug|Win32
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Release|x64.ActiveCfg = Release|x64
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Release|x64.Build.0 = Release|x64
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Release|x86.ActiveCfg = Release|Win32
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Release|x86.Build.0 = Release|Win32
+		{2171C0E8-4915-49B9-AC23-A484FA08C126}.Debug|x64.ActiveCfg = Debug|x64
+		{2171C0E8-4915-49B9-AC23-A484FA08C126}.Debug|x64.Build.0 = Debug|x64
+		{2171C0E8-4915-49B9-AC23-A484FA08C126}.Debug|x86.ActiveCfg = Debug|Win32
+		{2171C0E8-4915-49B9-AC23-A484FA08C126}.Debug|x86.Build.0 = Debug|Win32
+		{2171C0E8-4915-49B9-AC23-A484FA08C126}.Release|x64.ActiveCfg = Release|x64
+		{2171C0E8-4915-49B9-AC23-A484FA08C126}.Release|x64.Build.0 = Release|x64
+		{2171C0E8-4915-49B9-AC23-A484FA08C126}.Release|x86.ActiveCfg = Release|Win32
+		{2171C0E8-4915-49B9-AC23-A484FA08C126}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7} = {8E08D153-49EF-4DE5-BEFB-5F4448015401}
+		{2171C0E8-4915-49B9-AC23-A484FA08C126} = {8E08D153-49EF-4DE5-BEFB-5F4448015401}
 	EndGlobalSection
 EndGlobal
