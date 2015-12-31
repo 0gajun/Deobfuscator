@@ -55,9 +55,9 @@ void PEReader::readSections(int num_of_sections) {
 	// Read section data
 	for (int i = 0; i < pe.number_of_sections; i++) {
 		int size = pe.section_headers[i].SizeOfRawData;
-		std::vector<char> data(size);
+		std::vector<unsigned char> data(size);
 		ifs.seekg(pe.section_headers[i].PointerToRawData, std::ios::beg);
-		ifs.read(data.data(), size);
+		ifs.read((char *)data.data(), size);
 
 		pe.section_data.push_back(data);
 	}

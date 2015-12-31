@@ -15,7 +15,7 @@ public:
 	IMAGE_NT_HEADERS			nt_headers;
 	int						number_of_sections;
 	std::vector<IMAGE_SECTION_HEADER>	section_headers;
-	std::vector<std::vector<char>>		section_data;
+	std::vector<std::vector<unsigned char>>		section_data;
 };
 
 class PEReader

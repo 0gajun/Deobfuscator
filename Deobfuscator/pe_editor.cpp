@@ -122,7 +122,7 @@ void PEEditor::addSection(IMAGE_SECTION_HEADER section_header, std::vector<unsig
 		= (section_virtual_data.size() / pe_fmt.nt_headers.OptionalHeader.FileAlignment + 1)
 		* pe_fmt.nt_headers.OptionalHeader.FileAlignment;
 
-	std::vector<char> section_raw_data(section_raw_size);
+	std::vector<unsigned char> section_raw_data(section_raw_size);
 
 	memset(section_raw_data.data(), 0, section_raw_size);
 	memcpy(section_raw_data.data(), &section_virtual_data[0], section_virtual_data.size());

@@ -41,7 +41,7 @@ boolean PEWriter::write() {
 	// write section data
 	for (int i = 0; i < pe->number_of_sections; i++) {
 		ofs.seekp(pe->section_headers[i].PointerToRawData, std::ios::beg);
-		ofs.write(pe->section_data[i].data(), pe->section_data[i].size());
+		ofs.write((char *)pe->section_data[i].data(), pe->section_data[i].size());
 	}
 	return TRUE;
 }
