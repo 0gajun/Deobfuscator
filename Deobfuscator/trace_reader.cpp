@@ -1,10 +1,10 @@
 #include "stdafx.h"
 #include "trace.h"
 #include "string_util.h"
+#include <thread>
 #include <sstream>
 
 #include <iostream>
-
 
 #define LOG_DELIMITER "="
 #define ADDRESS_LEN_IN_LOGFILE 10
@@ -13,6 +13,7 @@
 
 TraceReader::TraceReader()
 {
+	this->parse_task_queue = std::make_unique<ParseTaskQueue>(TASK_QUEUE_SIZE);
 	this->data = std::make_unique<TraceData>();
 }
 
@@ -35,6 +36,16 @@ std::unique_ptr<TraceData> TraceReader::read()
 		throw std::exception::exception("file isn't opened.");
 	}
 
+	size_t mp = std::thread::hardware_concurrency();
+	if (mp == 0) {
+		mp = 1;
+	}
+	std::vector<std::thread> threads(mp);
+
+	for (std::thread& th : threads) {
+		th = std::thread(&TraceReader::parseAndRegistrationBasicBlockWorker, this);
+	}
+
 	unsigned int bb_id = 0;
 	std::string line;
 	std::string code_bytes;
@@ -46,25 +57,49 @@ std::unique_ptr<TraceData> TraceReader::read()
 		}
 		if (line == LOG_DELIMITER) {
 			std::getline(ifs, code_bytes);
-			std::shared_ptr<BasicBlock> bb = registerBasicBlock(parseBasicBlock(bb_id, insn_buffer, code_bytes));
 
-			// set flow information
-			if (prev_bb) {
-				prev_bb->next_bbs.insert(std::unordered_map<int, std::shared_ptr<BasicBlock>>::value_type(bb_id, bb));
-				prev_bb->next_bb_addr = bb->head_insn_addr;
-				bb->prev_bbs.insert(std::unordered_map<int, std::shared_ptr<BasicBlock>>::value_type(bb_id - 1, prev_bb));
-			}
+			std::shared_ptr<TraceReader::ParseTask> task
+				= std::make_shared<TraceReader::ParseTask>(bb_id, insn_buffer, code_bytes);
+			parse_task_queue->enqueue(task);
 
 			insn_buffer.clear();
 			code_bytes.clear();
-			prev_bb = bb;
 			bb_id++;
 			continue;
 		}
-
 		insn_buffer.push_back(line);
 	}
+
+	parse_task_queue->setFinished();
+
+	for (std::thread& th : threads) {
+		th.join();
+	}
+
+	// set flow information
+	for (unsigned int id = 0; id < data->basic_blocks.size(); id++) {
+		std::shared_ptr<BasicBlock> bb = data->basic_blocks.at(id);
+		if (prev_bb) {
+			prev_bb->next_bbs.insert(std::unordered_map<int, std::shared_ptr<BasicBlock>>::value_type(id, bb));
+			prev_bb->next_bb_addr = bb->head_insn_addr;
+			bb->prev_bbs.insert(std::unordered_map<int, std::shared_ptr<BasicBlock>>::value_type(id - 1, prev_bb));
+		}
+		prev_bb = bb;
+	}
+
 	return std::move(data);
+}
+
+void TraceReader::parseAndRegistrationBasicBlockWorker()
+{
+	while (1) {
+		std::shared_ptr<TraceReader::ParseTask> task = parse_task_queue->dequeue();
+		if (!task) {
+			// finished
+			return;
+		}
+		registerBasicBlock(parseBasicBlock(task->bb_id, task->insn_buffer, task->code_bytes));
+	}
 }
 
 // register basic block to Reader's TraceData object
@@ -81,21 +116,29 @@ std::shared_ptr<BasicBlock> TraceReader::registerBasicBlock(std::shared_ptr<Basi
 
 std::shared_ptr<BasicBlock> TraceReader::registerNewBasicBlock(std::shared_ptr<BasicBlock> bb)
 {
-	data->basic_blocks.insert(
-		std::map<unsigned int, std::shared_ptr<BasicBlock>>::value_type(bb->original_id, bb));
-	data->addr_bb_map.insert(
-		std::map<unsigned int, std::shared_ptr<BasicBlock>>::value_type(bb->head_insn_addr, bb));
+	auto bbs_entry = std::map<unsigned int, std::shared_ptr<BasicBlock>>::value_type(bb->original_id, bb);
+	auto bb_map_entry = std::map<unsigned int, std::shared_ptr<BasicBlock>>::value_type(bb->head_insn_addr, bb);
+
+	{
+		std::lock_guard<std::mutex> lock(bb_registration_mutex);
+		data->basic_blocks.insert(bbs_entry);
+		data->addr_bb_map.insert(bb_map_entry);
+	}
+
 	return bb;
 }
 
 std::shared_ptr<BasicBlock> TraceReader::registerExistingBasicBlock(std::shared_ptr<BasicBlock> bb)
 {
 	std::shared_ptr<BasicBlock> existing_bb = data->addr_bb_map[bb->head_insn_addr];
-
 	existing_bb->block_id_set.insert(bb->original_id);
+	auto bbs_entry = std::map<unsigned int, std::shared_ptr<BasicBlock>>::value_type(bb->original_id, existing_bb);
 
-	data->basic_blocks.insert(
-		std::map<unsigned int, std::shared_ptr<BasicBlock>>::value_type(bb->original_id, existing_bb));
+	{
+		std::lock_guard<std::mutex> lock(bb_registration_mutex);
+		data->basic_blocks.insert(bbs_entry);
+	}
+
 	return existing_bb;
 }
 
@@ -209,4 +252,45 @@ unsigned int TraceReader::parseBinaryCodeInBasicBlock(std::shared_ptr<BasicBlock
 	}
 		
 	return basic_block_insn_size;
+}
+
+TraceReader::ParseTask::ParseTask(unsigned int bb_id, std::vector<std::string> insn_buffer, std::string code)
+	: bb_id(bb_id), insn_buffer(insn_buffer), code_bytes(code)
+{
+}
+
+TraceReader::ParseTaskQueue::ParseTaskQueue(int capacity) : capacity(capacity)
+{
+}
+
+void TraceReader::ParseTaskQueue::enqueue(std::shared_ptr<ParseTask> t)
+{
+	std::unique_lock<std::mutex> lock(m);
+	c_enq.wait(lock, [this] { return data.size() != capacity; });
+	data.push(t);
+	c_deq.notify_one();
+}
+
+std::shared_ptr<TraceReader::ParseTask> TraceReader::ParseTaskQueue::dequeue()
+{
+	std::unique_lock<std::mutex> lock(m);
+	c_deq.wait(lock, [this] { return !data.empty() || is_finished; });
+	if (is_finished) {
+		return nullptr;
+	}
+	std::shared_ptr<TraceReader::ParseTask> ret = data.front();
+	data.pop();
+	c_enq.notify_one();
+	return ret;
+}
+
+void TraceReader::ParseTaskQueue::setFinished()
+{
+	this->is_finished = true;
+	c_deq.notify_all();
+}
+
+size_t TraceReader::ParseTaskQueue::size()
+{
+	return data.size();
 }

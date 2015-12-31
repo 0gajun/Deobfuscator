@@ -8,6 +8,10 @@
 #include <map>
 #include <memory>
 #include <stack>
+#include <queue>
+#include <mutex>
+
+#define TASK_QUEUE_SIZE 100
 
 #define SHORT_JMP_INSN_SIZE 2
 #define NEAR_JMP_INSN_SIZE 5
@@ -103,9 +107,41 @@ public:
 class TraceReader
 {
 private:
+	class ParseTask
+	{
+	public:
+		unsigned int bb_id;
+		std::vector<std::string> insn_buffer;
+		std::string code_bytes;
+
+		explicit ParseTask(unsigned int bb_id, std::vector<std::string> insn_buffer, std::string code);
+	};
+
+	class ParseTaskQueue
+	{
+	private:
+		std::mutex m;
+		std::queue<std::shared_ptr<ParseTask>> data;
+		size_t capacity;
+		std::condition_variable c_enq;
+		std::condition_variable c_deq;
+		bool is_finished;
+	public:
+		explicit ParseTaskQueue(int capacity);
+		size_t size();
+		void enqueue(std::shared_ptr<ParseTask> t);
+		std::shared_ptr<ParseTask> dequeue();
+		void setFinished();
+	};
+
 	std::ifstream ifs;
 	std::unique_ptr<TraceData> data;
+	std::unique_ptr<ParseTaskQueue> parse_task_queue;
 
+	std::mutex bb_registration_mutex;
+
+
+	void parseAndRegistrationBasicBlockWorker();
 	std::shared_ptr<BasicBlock> registerBasicBlock(std::shared_ptr<BasicBlock> bb);
 	std::shared_ptr<BasicBlock> registerNewBasicBlock(std::shared_ptr<BasicBlock> bb);
 	std::shared_ptr<BasicBlock> registerExistingBasicBlock(std::shared_ptr<BasicBlock> bb);
