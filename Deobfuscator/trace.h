@@ -94,6 +94,7 @@ class TraceData
 public:
 	std::map<unsigned int, std::shared_ptr<BasicBlock>> basic_blocks;
 	std::map<unsigned int, std::shared_ptr<BasicBlock>> addr_bb_map;
+	unsigned int oep;
 };
 
 class TraceAnalysisResult
@@ -163,6 +164,11 @@ public:
 	std::unique_ptr<TraceData> read();
 };
 
+#define TRACE_ANALYZER_ENABLE_OVERLAP_FUNC 0x00000010
+
+class DisassembleResult;
+class PEFormat;
+
 class TraceAnalyzer
 {
 private:
@@ -173,11 +179,15 @@ private:
 		const unsigned int ret_addr;
 		CallStackInfo(unsigned int caller_bb_id, unsigned int ret_addr);
 	};
+	unsigned int option_flags;
 
-	std::unique_ptr<TraceData> trace;
+	const std::unique_ptr<TraceData> trace;
+	std::unique_ptr<PEFormat> pe_fmt;
 	std::stack<std::shared_ptr<CallStackInfo>> call_stack;
 	std::pair<unsigned int, unsigned int> prologue_bb_range;
 	std::pair<unsigned int, unsigned int> epilogue_bb_range;
+
+	std::unique_ptr<DisassembleResult> disassembler_result;
 
 	unsigned int getReturnAddressOfCallInsn(std::shared_ptr<Instruction> call_insn);
 	unsigned int detectPrologueEpilogueCodeRegion();
@@ -186,8 +196,13 @@ private:
 	bool isInPrologueCode(unsigned int bb_id);
 	bool isInEpilogueCode(unsigned int bb_id);
 
+	// For overlapping and basic blocks
+	bool isOverlapped(unsigned int actual_addr);
+
 public:
-	TraceAnalyzer(std::unique_ptr<TraceData> data);
+	TraceAnalyzer(std::unique_ptr<TraceData> data, PEFormat pe_fmt);
+
+	void setDisassembleResult(std::unique_ptr<DisassembleResult> result);
 
 	std::unique_ptr<TraceAnalysisResult> analyze();
 };

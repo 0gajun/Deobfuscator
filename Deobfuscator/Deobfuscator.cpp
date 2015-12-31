@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "pe.h"
 #include "trace.h"
+#include "disassembler.h"
 #include <iostream>
 
 int main(int argc, char** argv)
@@ -25,11 +26,19 @@ int main(int argc, char** argv)
 	}
 	PEFormat pe_fmt = reader->getPEFormat();
 
+	std::unique_ptr<DisassembleResult> dis_res = std::make_unique<DisassembleResult>(Disassembler().disasmPE(pe_fmt));
+	
+	for (unsigned int addr : dis_res->insns_addr_set) {
+		std::cout << "0x" << std::hex << addr << std::endl;
+	}
+	
 	// Analyze
 	TraceReader trace_reader;
 	trace_reader.openTraceFile(trace_file_path);
 	std::unique_ptr<TraceData> data = trace_reader.read();
-	TraceAnalyzer analyzer(std::move(data));
+	data->oep = pe_fmt.nt_headers.OptionalHeader.AddressOfEntryPoint;
+	TraceAnalyzer analyzer(std::move(data), pe_fmt);
+	analyzer.setDisassembleResult(std::move(dis_res));
 	std::unique_ptr<TraceAnalysisResult> analysis_result = analyzer.analyze();
 
 	// Edit

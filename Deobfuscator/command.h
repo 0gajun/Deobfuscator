@@ -43,7 +43,15 @@ class CallStackTamperingCommand : public CreateShadowSectionCommand
 
 class OverlappingFunctionAndBasicBlockCommand : public PECommand
 {
+private:
+	const std::shared_ptr<BasicBlock> prev_bb;
+	const std::vector<std::shared_ptr<BasicBlock>> overlapped_bbs;
+	const std::shared_ptr<BasicBlock> next_bb;
+public:
+	OverlappingFunctionAndBasicBlockCommand(const std::shared_ptr<BasicBlock> prev_bb,
+		const std::vector<std::shared_ptr<BasicBlock>> overlapped_bbs, const std::shared_ptr<BasicBlock> next_bb);
 
+	void execute(std::shared_ptr<PEEditor> editor) override;
 };
 
 class RedundantJmpReductionCommand : public PECommand

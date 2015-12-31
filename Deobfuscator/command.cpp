@@ -133,3 +133,13 @@ void RedundantJmpReductionCommand::execute(std::shared_ptr<PEEditor> editor)
 
 	editor->overwriteCode(new_jmp_insn.binary, editor->convertFromVirtToRawAddr(from_bb_last_insn->addr));
 }
+
+OverlappingFunctionAndBasicBlockCommand::OverlappingFunctionAndBasicBlockCommand(const std::shared_ptr<BasicBlock> prev_bb, const std::vector<std::shared_ptr<BasicBlock>> overlapped_bbs, const std::shared_ptr<BasicBlock> next_bb)
+	: prev_bb(prev_bb), overlapped_bbs(overlapped_bbs), next_bb(next_bb)
+{
+}
+
+void OverlappingFunctionAndBasicBlockCommand::execute(std::shared_ptr<PEEditor> editor)
+{
+
+}

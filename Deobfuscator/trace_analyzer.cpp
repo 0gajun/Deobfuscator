@@ -1,9 +1,18 @@
 ﻿#include "stdafx.h"
 #include "trace.h"
+#include "disassembler.h"
 #include <iostream>
 
-TraceAnalyzer::TraceAnalyzer(std::unique_ptr<TraceData> data) : trace(std::move(data))
+TraceAnalyzer::TraceAnalyzer(std::unique_ptr<TraceData> data, PEFormat pe_fmt)
+	: trace(std::move(data))
 {
+	this->pe_fmt = std::make_unique<PEFormat>(pe_fmt);
+}
+
+void TraceAnalyzer::setDisassembleResult(std::unique_ptr<DisassembleResult> result)
+{
+	this->disassembler_result = std::move(result);
+	option_flags |= TRACE_ANALYZER_ENABLE_OVERLAP_FUNC;
 }
 
 TraceAnalysisResult::TraceAnalysisResult()
@@ -30,8 +39,8 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 
 		std::shared_ptr<Instruction> last_insn = bb->insn_list.back();
 
-		// Check Overlapping functions and basic blocks
 		// reduction bbs which has only one basic block
+		// (this deobfuscates simple overlapping functions and basic blocks
 		if (bb->insn_list.size() == 1 && last_insn->opcode == "jmp") {
 			std::shared_ptr<BasicBlock> prev_bb = trace->basic_blocks.at(bb_id - 1);
 			int reduction_count = 0;
@@ -60,6 +69,27 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 			// decrement iterator because iterator will be incremented after continue;
 			it--;
 			continue;
+		}
+
+		// Check Overlapping functions and basic blocks
+		if ((option_flags & TRACE_ANALYZER_ENABLE_OVERLAP_FUNC) && disassembler_result->insns_addr_set.size() != 0) {
+			unsigned int actual_addr = PEUtil::getVirtAddrBeforeRelocate(bb->head_insn_addr, result->original_entry_point_vaddr, *pe_fmt);
+
+			if (isOverlapped(actual_addr)) {
+				std::cout << "overlapped!" << std::endl;
+				std::shared_ptr<BasicBlock> prev_bb = trace->basic_blocks.at(bb_id - 1);
+				std::vector<std::shared_ptr<BasicBlock>> overlapped_bbs;
+
+				// collect continuous overlapped basic blocks
+				while (isOverlapped(actual_addr)) {
+					overlapped_bbs.push_back(it->second);
+					it++;
+					actual_addr = PEUtil::getVirtAddrBeforeRelocate(it->second->head_insn_addr, result->original_entry_point_vaddr, *pe_fmt);
+				}
+
+				result->invoker->addCommand(std::make_shared<OverlappingFunctionAndBasicBlockCommand>(prev_bb, overlapped_bbs, it->second));
+				continue;
+			}
 		}
 
 		// Check non-returning call
@@ -147,6 +177,12 @@ inline bool TraceAnalyzer::isInPrologueCode(unsigned int bb_id)
 inline bool TraceAnalyzer::isInEpilogueCode(unsigned int bb_id)
 {
 	return epilogue_bb_range.first <= bb_id && bb_id <= epilogue_bb_range.second;
+}
+
+bool TraceAnalyzer::isOverlapped(unsigned int actual_addr)
+{
+	return isProgramCode(actual_addr)
+		&& disassembler_result->insns_addr_set.find(actual_addr) == disassembler_result->insns_addr_set.end();
 }
 
 unsigned int TraceAnalyzer::getReturnAddressOfCallInsn(std::shared_ptr<Instruction> call_insn)

@@ -160,3 +160,10 @@ public:
 private:
 	std::unique_ptr<ShadowSectionBuilder> shadow_sec_builder;
 };
+
+class PEUtil
+{
+public:
+	static unsigned int getVirtAddrBeforeRelocate(const unsigned int vaddr,
+		const unsigned int actual_oep, PEFormat pe_fmt);
+};
