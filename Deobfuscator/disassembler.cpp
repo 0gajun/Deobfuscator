@@ -8,7 +8,7 @@ DisassembleResult::DisassembleResult()
 
 DisassembleResult Disassembler::disasmPE(PEFormat pe_fmt)
 {
-	for (int i = 0; i < pe_fmt.section_headers.size(); i++) {
+	for (unsigned int i = 0; i < pe_fmt.section_headers.size(); i++) {
 		IMAGE_SECTION_HEADER header = pe_fmt.section_headers[i];
 		if ((header.Characteristics & IMAGE_SCN_MEM_EXECUTE)
 			&& (header.Characteristics & IMAGE_SCN_MEM_READ)) {
@@ -36,8 +36,8 @@ DisassembleResult Disassembler::execute(std::vector<unsigned char> code,
 	count = cs_disasm(handle, code.data(), size, base_addr, 0, &insn);
 
 	if (count > 0) {
-		for (int i = 0; i < count; i++) {
-			result.insns_addr_set.insert(insn[i].address);
+		for (unsigned int i = 0; i < count; i++) {
+			result.insns_addr_set.insert((unsigned int)insn[i].address);
 		}
 	}
 	else {

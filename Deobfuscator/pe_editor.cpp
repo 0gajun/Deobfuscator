@@ -132,11 +132,11 @@ void PEEditor::addSection(IMAGE_SECTION_HEADER section_header, std::vector<unsig
 	pe_fmt.number_of_sections++;
 }
 
-boolean PEEditor::overwriteCode(std::vector<unsigned char> new_code, int raw_addr)
+boolean PEEditor::overwriteCode(std::vector<unsigned char> new_code, unsigned int raw_addr)
 {
 	for (unsigned int i = 0; i < pe_fmt.section_headers.size(); i++) {
-		int section_start_addr = pe_fmt.section_headers[i].PointerToRawData;
-		int section_end_addr = section_start_addr + pe_fmt.section_headers[i].SizeOfRawData - 1;
+		unsigned int section_start_addr = pe_fmt.section_headers[i].PointerToRawData;
+		unsigned int section_end_addr = section_start_addr + pe_fmt.section_headers[i].SizeOfRawData - 1;
 
 		if (section_start_addr <= raw_addr && raw_addr + new_code.size() <= section_end_addr) {
 			std::cout << "overwriteCode: " << raw_addr << std::endl;

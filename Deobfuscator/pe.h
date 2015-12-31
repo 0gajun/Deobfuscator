@@ -98,7 +98,7 @@ public:
 
 	// modification methods
 	void addSection(IMAGE_SECTION_HEADER section_header, std::vector<unsigned char> section_virtual_data);
-	boolean overwriteCode(std::vector<unsigned char> new_code, int raw_addr);
+	boolean overwriteCode(std::vector<unsigned char> new_code, unsigned int raw_addr);
 
 	// For shadow section
 	void initializeShadowSectionBuilder(unsigned int size);
