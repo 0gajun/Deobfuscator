@@ -11,6 +11,8 @@
 
 #define NUM_OF_CHARACTER_IN_A_BYTE 2
 
+#define ENABLE_MALTI_THREADING TRUE
+
 TraceReader::TraceReader()
 {
 	this->parse_task_queue = std::make_unique<ParseTaskQueue>(TASK_QUEUE_SIZE);
@@ -37,7 +39,7 @@ std::unique_ptr<TraceData> TraceReader::read()
 	}
 
 	size_t mp = std::thread::hardware_concurrency();
-	if (mp == 0) {
+	if (mp == 0 || !ENABLE_MALTI_THREADING) {
 		mp = 1;
 	}
 	std::vector<std::thread> threads(mp);
