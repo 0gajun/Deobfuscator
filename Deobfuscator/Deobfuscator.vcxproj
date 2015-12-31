@@ -93,7 +93,9 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ShowProgress>NotSet</ShowProgress>
+      <AdditionalDependencies>capstone.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -152,6 +154,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="command.h" />
+    <ClInclude Include="disassembler.h" />
     <ClInclude Include="pe.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="string_util.h" />
@@ -162,6 +165,7 @@
   <ItemGroup>
     <ClCompile Include="command.cpp" />
     <ClCompile Include="Deobfuscator.cpp" />
+    <ClCompile Include="disassembler.cpp" />
     <ClCompile Include="pe_editor.cpp" />
     <ClCompile Include="pe_reader.cpp" />
     <ClCompile Include="pe_writer.cpp" />

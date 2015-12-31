@@ -51,6 +51,9 @@
     <ClInclude Include="command.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="disassembler.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -84,6 +87,9 @@
       <Filter>ソース ファイル\pe</Filter>
     </ClCompile>
     <ClCompile Include="trace.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="disassembler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
