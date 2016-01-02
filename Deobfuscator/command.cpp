@@ -131,7 +131,15 @@ void RedundantJmpReductionCommand::execute(std::shared_ptr<PEEditor> editor)
 		return;
 	}
 
+	std::cout << "redundant jmp reduction" << std::endl;
 	editor->overwriteCode(new_jmp_insn.binary, editor->convertFromVirtToRawAddr(from_bb_last_insn->addr));
+}
+
+bool OverlappingFunctionAndBasicBlockCommand::isNeededNearJmp(std::shared_ptr<PEEditor> editor)
+{
+	unsigned int next_shadow_head_addr = editor->nextShadowCodeAddr();
+	unsigned int from = editor->convertToOriginalVirtAddr(prev_bb->tail_insn_addr + prev_bb->insn_list.back()->binary.size());
+	return !PEUtil::canShortJmp(from, next_shadow_head_addr);
 }
 
 OverlappingFunctionAndBasicBlockCommand::OverlappingFunctionAndBasicBlockCommand(const std::shared_ptr<BasicBlock> prev_bb, const std::vector<std::shared_ptr<BasicBlock>> overlapped_bbs, const std::shared_ptr<BasicBlock> next_bb)
@@ -141,5 +149,83 @@ OverlappingFunctionAndBasicBlockCommand::OverlappingFunctionAndBasicBlockCommand
 
 void OverlappingFunctionAndBasicBlockCommand::execute(std::shared_ptr<PEEditor> editor)
 {
+	std::shared_ptr<Instruction> prev_bb_last_insn = prev_bb->insn_list.back();
+	if (prev_bb_last_insn->opcode != "jmp") {
+		// TODO: Implement
+		std::cout << "OverlappingFunctionAndBasicBlockCommand for non jmp insn isn't implemented now. So, skip..." << std::endl;
+		return;
+	}
+	if (overlapped_bbs.size() != 1) {
+		std::cout << "OverlappingFunctionAndBasicBlockCommand for multi overlapped bbs isn't implemented now. So, skip..." << std::endl;
+		return;
+	}
 
+	std::shared_ptr<BasicBlock> overlapped_bb = overlapped_bbs[0];
+	std::list<Instruction> shadow_section_insns;
+
+	unsigned int shadow_head_addr = editor->nextShadowCodeAddr();
+	switch (prev_bb_last_insn->binary[0]) {
+	case OPCODE_SHORT_JMP:
+		if (isNeededNearJmp(editor)) {
+			// have to replace insns before jmp insn together
+			std::cout << "OPCODE_SHORT_JMP : " << "neededNearJmp" << std::endl;
+
+			unsigned int replace_insn_head_addr;
+			int locatable_size = 0;
+			int index;
+			for (index = prev_bb->insn_list.size() - 1; index >= 0; index--) {
+				locatable_size += prev_bb->insn_list[index]->binary.size();
+				if (locatable_size >= NEAR_JMP_INSN_SIZE) {
+					replace_insn_head_addr = editor->convertToOriginalVirtAddr(prev_bb->insn_list[index]->addr);
+					break;
+				}
+			}
+
+			if (index < 0) {
+				// cannot allocate
+				// TODO: error handling correctly
+				std::cout << "Cannot allocate jpm replacement area" << std::endl;
+				return;
+			}
+
+			int prev_bb_insn_list_size = prev_bb->insn_list.size();
+			for (int i = index; i < prev_bb_insn_list_size - 1;  i++) {
+				shadow_section_insns.push_front(*prev_bb->insn_list.back());
+				prev_bb->insn_list.pop_back();
+			}
+
+			Instruction new_jmp = Instruction::JmpInsnBuilder(replace_insn_head_addr, shadow_head_addr).build(editor);
+			unsigned int new_jmp_raw_addr = editor->convertFromVirtToRawAddr(replace_insn_head_addr);
+			editor->overwriteCode(new_jmp.binary, new_jmp_raw_addr);
+			unsigned int nop_size = locatable_size - new_jmp.binary.size();
+			std::vector<unsigned char> nop_code;
+			for (int i = 0; i < nop_size; i++) {
+				nop_code.push_back(OPCODE_NOP);
+			}
+			editor->overwriteCode(nop_code, new_jmp_raw_addr + new_jmp.binary.size());
+			break;
+		}
+	// In case of that near jmp isn't needed when opcode is short jmp,
+	// we only have to replace jmp address to shadow section
+	// FALL_THROUGH...
+	case OPCODE_NEAR_JMP:
+	{
+		unsigned int jmp_from_addr = editor->convertToOriginalVirtAddr(
+			prev_bb->tail_insn_addr + prev_bb->insn_list.back()->binary.size());
+		Instruction new_jmp_insn = Instruction::JmpInsnBuilder(jmp_from_addr, shadow_head_addr).build(editor);
+		editor->overwriteCode(new_jmp_insn.binary, editor->convertFromVirtToRawAddr(jmp_from_addr));
+	}
+		break;
+	default:
+		std::cout << "invalid opcode or not implemented @OverlappingFunctionAndBasicBlockCommand#execute" << std::endl;
+		return;
+	}
+
+	// For returning original code section
+	// remove original jmp code
+	overlapped_bb->insn_list.pop_back();
+	unsigned int next_bb_head_addr = editor->convertToOriginalVirtAddr(next_bb->head_insn_addr);
+	Instruction return_jmp = Instruction::JmpInsnBuilder(shadow_head_addr, next_bb_head_addr).build(editor);
+
+	editor->appendShadowSectionCode(return_jmp.binary);
 }

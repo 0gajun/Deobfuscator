@@ -168,13 +168,18 @@ unsigned int PEEditor::appendShadowSectionCode(std::vector<unsigned char> code)
 	return shadow_sec_builder->appendCode(code);
 }
 
+unsigned int PEEditor::nextShadowCodeAddr()
+{
+	return shadow_sec_builder->getNextHeadAddr();
+}
+
 unsigned int PEEditor::convertFromVirtToRawAddr(unsigned int virt_addr)
 {
-	unsigned int real_image_base = getRealImageBase();
+	unsigned int original_virt_addr = convertToOriginalVirtAddr(virt_addr);
 	bool is_header_found = false;
 	IMAGE_SECTION_HEADER header;
 	for (IMAGE_SECTION_HEADER h : pe_fmt.section_headers) {
-		if (h.VirtualAddress <= virt_addr - real_image_base && virt_addr - real_image_base <= h.VirtualAddress + h.Misc.VirtualSize) {
+		if (h.VirtualAddress <= original_virt_addr && original_virt_addr <= h.VirtualAddress + h.Misc.VirtualSize) {
 			is_header_found = true;
 			header = h;
 			break;
@@ -186,8 +191,7 @@ unsigned int PEEditor::convertFromVirtToRawAddr(unsigned int virt_addr)
 		abort();
 	}
 
-	return header.PointerToRawData + virt_addr - analysis_result->original_entry_point_vaddr
-		+ pe_fmt.nt_headers.OptionalHeader.AddressOfEntryPoint - header.VirtualAddress;
+	return header.PointerToRawData + original_virt_addr - header.VirtualAddress;
 }
 
 unsigned int PEEditor::convertToOriginalVirtAddr(unsigned int virt_addr)
@@ -309,12 +313,17 @@ PEEditor::ShadowSectionBuilder::ShadowSectionBuilder(unsigned int virtual_offset
 // return : virtual address of beginning of code
 unsigned int PEEditor::ShadowSectionBuilder::appendCode(std::vector<unsigned char> code)
 {
-	unsigned int virtual_address = v_offset + code_buffer.size();
+	unsigned int virtual_address = getNextHeadAddr();
 	code_buffer.insert(code_buffer.end(), code.begin(), code.end());
 	if (code.size() > v_size) {
 		// TODO: error
 	}
 	return virtual_address;
+}
+
+unsigned int PEEditor::ShadowSectionBuilder::getNextHeadAddr()
+{
+	return v_offset + code_buffer.size();
 }
 
 bool PEEditor::ShadowSectionBuilder::hasCode()

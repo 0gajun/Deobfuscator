@@ -9,3 +9,9 @@ unsigned int PEUtil::getVirtAddrBeforeRelocate(const unsigned int vaddr,
 
 	return vaddr > actual_image_base ? vaddr - actual_image_base : vaddr;
 }
+
+bool PEUtil::canShortJmp(unsigned int from, unsigned to)
+{
+	signed int distance = to - from;
+	return -128 <= distance && distance < 127;
+}

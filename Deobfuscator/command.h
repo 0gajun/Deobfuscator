@@ -41,12 +41,14 @@ class CallStackTamperingCommand : public CreateShadowSectionCommand
 
 };
 
-class OverlappingFunctionAndBasicBlockCommand : public PECommand
+class OverlappingFunctionAndBasicBlockCommand : public CreateShadowSectionCommand
 {
 private:
 	const std::shared_ptr<BasicBlock> prev_bb;
 	const std::vector<std::shared_ptr<BasicBlock>> overlapped_bbs;
 	const std::shared_ptr<BasicBlock> next_bb;
+
+	bool isNeededNearJmp(std::shared_ptr<PEEditor> editor);
 public:
 	OverlappingFunctionAndBasicBlockCommand(const std::shared_ptr<BasicBlock> prev_bb,
 		const std::vector<std::shared_ptr<BasicBlock>> overlapped_bbs, const std::shared_ptr<BasicBlock> next_bb);

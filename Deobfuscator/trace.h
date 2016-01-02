@@ -17,6 +17,7 @@
 #define NEAR_JMP_INSN_SIZE 5
 #define OPCODE_SHORT_JMP 0xEB
 #define OPCODE_NEAR_JMP 0xE9
+#define OPCODE_NOP 0x90
 
 class CommandInvoker;
 #include "command.h"

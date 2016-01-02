@@ -11,11 +11,13 @@ int main(int argc, char** argv)
 	// TODO: use cmd_line option, and parse it
 
 	std::string original_pe_path
-		= "C:\\Users\\ogamal\\Documents\\binary_code_obfuscation_sample\\bin\\overlap_func.exe";
+		//= "C:\\Users\\ogamal\\Documents\\binary_code_obfuscation_sample\\bin\\overlap_func.exe";
+		= "C:\\Users\\ogamal\\Documents\\binary_code_obfuscation_sample\\single_overlap_func.exe";
 	std::string trace_file_path
-		= "C:\\Users\\ogamal\\Documents\\trace_data\\overlapping_functions.log";
+		//= "C:\\Users\\ogamal\\Documents\\trace_data\\overlapping_functions.log";
+		= "C:\\Users\\ogamal\\Documents\\trace_data\\single_overlaping_func.log";
 	std::string out_put_binary_path
-		= "C:\\Users\\ogamal\\Documents\\hoge_overlap.exe";
+		= "C:\\Users\\ogamal\\Documents\\hoge_single_overlap.exe";
 
 	// Read
 	PEReader::Builder builder;

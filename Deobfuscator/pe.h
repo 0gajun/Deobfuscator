@@ -104,6 +104,8 @@ public:
 	void initializeShadowSectionBuilder(unsigned int size);
 	unsigned int appendShadowSectionCode(std::vector<unsigned char> code);
 
+	unsigned int nextShadowCodeAddr();
+
 	unsigned int convertFromVirtToRawAddr(unsigned int virt_addr);
 	unsigned int convertToOriginalVirtAddr(unsigned int virt_addr);
 
@@ -150,6 +152,7 @@ public:
 		ShadowSectionBuilder(unsigned int virtual_offset, unsigned int virtual_size);
 
 		unsigned int appendCode(std::vector<unsigned char> code);
+		unsigned int getNextHeadAddr();
 		bool hasCode();
 		unsigned int requiredSize();
 
@@ -166,4 +169,5 @@ class PEUtil
 public:
 	static unsigned int getVirtAddrBeforeRelocate(const unsigned int vaddr,
 		const unsigned int actual_oep, PEFormat pe_fmt);
+	static bool canShortJmp(unsigned int from, unsigned to);
 };
