@@ -51,24 +51,23 @@ void deobfuscate(std::string original_pe_path,
 	return;
 }
 
+#define FOLDER "C:\\Users\\ogamal\\Documents\\trace_data\\graduation_thesis\\"
+
 int main(int argc, char** argv)
 {
-	// TODO: use cmd_line option, and parse it
-	std::cout << argc << std::endl;
-	return 0;
-
 	if (argc == 4) {
 		deobfuscate(argv[1], argv[2], argv[3]);
 	}
 	else {
+		std::string folder = FOLDER;
+		std::string target_pe = "single_overlap_func";
+		std::string trace_file = "single_overlap_func.log";
 		std::string original_pe_path
-			//= "C:\\Users\\ogamal\\Documents\\binary_code_obfuscation_sample\\bin\\overlap_func.exe";
-			= "C:\\Users\\ogamal\\Documents\\binary_code_obfuscation_sample\\single_overlap_func.exe";
+			= folder + "binaries\\" + target_pe + ".exe";
 		std::string trace_file_path
-			//= "C:\\Users\\ogamal\\Documents\\trace_data\\overlapping_functions.log";
-			= "C:\\Users\\ogamal\\Documents\\trace_data\\single_overlaping_func.log";
+			= folder + trace_file;
 		std::string output_binary_path
-			= "C:\\Users\\ogamal\\Documents\\hoge_single_overlap.exe";
+			= folder + "deobfuscated\\" + target_pe + ".deobfuscated.exe";
 		deobfuscate(original_pe_path, trace_file_path, output_binary_path);
 	}
 }

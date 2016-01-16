@@ -1,7 +1,10 @@
 ﻿#include "stdafx.h"
 #include "trace.h"
+#include "pe.h"
 #include "disassembler.h"
 #include <iostream>
+
+#define IS_REDUNDANT_JMP_REDUCION_ENABLED TRUE
 
 TraceAnalyzer::TraceAnalyzer(std::unique_ptr<TraceData> data, PEFormat pe_fmt)
 	: trace(std::move(data))
@@ -41,7 +44,7 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 
 		// reduction bbs which has only one basic block
 		// (this deobfuscates simple overlapping functions and basic blocks
-		if (bb->insn_list.size() == 1 && last_insn->opcode == "jmp") {
+		if (bb->insn_list.size() == 1 && last_insn->opcode == "jmp" && IS_REDUNDANT_JMP_REDUCION_ENABLED) {
 			std::shared_ptr<BasicBlock> prev_bb = trace->basic_blocks.at(bb_id - 1);
 			int reduction_count = 0;
 
@@ -63,7 +66,7 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 				cmd = std::make_shared<RedundantJmpReductionCommand>(bb, it->second);
 			}
 
-			if (cmd) {
+			if (cmd && shouldIssueCommand(cmd)) {
 				result->invoker->addCommand(cmd);
 			}
 			// decrement iterator because iterator will be incremented after continue;
@@ -86,8 +89,10 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 					it++;
 					actual_addr = PEUtil::getVirtAddrBeforeRelocate(it->second->head_insn_addr, result->original_entry_point_vaddr, *pe_fmt);
 				}
-
-				result->invoker->addCommand(std::make_shared<OverlappingFunctionAndBasicBlockCommand>(prev_bb, overlapped_bbs, it->second));
+				std::shared_ptr<PECommand> cmd = std::make_shared<OverlappingFunctionAndBasicBlockCommand>(prev_bb, overlapped_bbs, it->second);
+				if (shouldIssueCommand(cmd)) {
+					result->invoker->addCommand(cmd);
+				}
 				continue;
 			}
 		}
@@ -116,7 +121,9 @@ std::unique_ptr<TraceAnalysisResult> TraceAnalyzer::analyze()
 					std::shared_ptr<BasicBlock> jmp_target = trace->basic_blocks.at(bb_id + 1);
 					std::shared_ptr<NonReturningCallCommand> cmd
 						= std::make_shared<NonReturningCallCommand>(caller, callee, jmp_target);
-					result->invoker->addCommand(cmd);
+					if (shouldIssueCommand(cmd)) {
+						result->invoker->addCommand(cmd);
+					}
 				}
 			}
 			call_stack.pop();
@@ -133,7 +140,7 @@ unsigned int TraceAnalyzer::detectPrologueEpilogueCodeRegion()
 	auto it = trace->basic_blocks.begin();
 
 	// move iterator to program code
-	for (; !isProgramCode(it->second->head_insn_addr); it++) {
+	for (; !PEUtil::isProgramCode(it->second->head_insn_addr); it++) {
 	}
 
 	unsigned int original_entry_point_vaddr = it->second->head_insn_addr;
@@ -147,11 +154,11 @@ unsigned int TraceAnalyzer::detectPrologueEpilogueCodeRegion()
 	for (; it != trace->basic_blocks.end(); it++) {
 		unsigned int bb_addr = it->second->head_insn_addr;
 
-		if (non_program_code_start_bb_id == 0 && !isProgramCode(bb_addr)) {
+		if (non_program_code_start_bb_id == 0 && !PEUtil::isProgramCode(bb_addr)) {
 			// entering non program code
 			non_program_code_start_bb_id = it->first;
 		}
-		else if (non_program_code_start_bb_id != 0 && isProgramCode(bb_addr)) {
+		else if (non_program_code_start_bb_id != 0 && PEUtil::isProgramCode(bb_addr)) {
 			// exit non program code
 			non_program_code_start_bb_id = 0;
 		}
@@ -163,10 +170,9 @@ unsigned int TraceAnalyzer::detectPrologueEpilogueCodeRegion()
 	return original_entry_point_vaddr;
 }
 
-inline bool TraceAnalyzer::isProgramCode(unsigned int address)
+inline bool TraceAnalyzer::shouldIssueCommand(std::shared_ptr<PECommand> cmd)
 {
-	// TODO: should use more correctly method, this is temporaly method...orz
-	return address < 0x60000000;
+	return cmd->isCommandInProgram();
 }
 
 inline bool TraceAnalyzer::isInPrologueCode(unsigned int bb_id)
@@ -181,7 +187,7 @@ inline bool TraceAnalyzer::isInEpilogueCode(unsigned int bb_id)
 
 bool TraceAnalyzer::isOverlapped(unsigned int actual_addr)
 {
-	return isProgramCode(actual_addr)
+	return PEUtil::isProgramCode(actual_addr)
 		&& disassembler_result->insns_addr_set.find(actual_addr) == disassembler_result->insns_addr_set.end();
 }
 

@@ -20,6 +20,7 @@
 #define OPCODE_NOP 0x90
 
 class CommandInvoker;
+class PECommnad;
 #include "command.h"
 class PEEditor;
 
@@ -169,6 +170,7 @@ public:
 
 class DisassembleResult;
 class PEFormat;
+class PECommand;
 
 class TraceAnalyzer
 {
@@ -193,7 +195,8 @@ private:
 	unsigned int getReturnAddressOfCallInsn(std::shared_ptr<Instruction> call_insn);
 	unsigned int detectPrologueEpilogueCodeRegion();
 
-	bool isProgramCode(unsigned int address);
+	bool shouldIssueCommand(std::shared_ptr<PECommand> cmd);
+
 	bool isInPrologueCode(unsigned int bb_id);
 	bool isInEpilogueCode(unsigned int bb_id);
 

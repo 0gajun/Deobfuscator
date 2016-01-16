@@ -170,4 +170,6 @@ public:
 	static unsigned int getVirtAddrBeforeRelocate(const unsigned int vaddr,
 		const unsigned int actual_oep, PEFormat pe_fmt);
 	static bool canShortJmp(unsigned int from, unsigned to);
+	static bool isProgramCode(unsigned int address);
+	static bool isKernelCode(unsigned int address);
 };

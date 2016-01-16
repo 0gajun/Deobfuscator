@@ -15,3 +15,16 @@ bool PEUtil::canShortJmp(unsigned int from, unsigned to)
 	signed int distance = to - from;
 	return -128 <= distance && distance < 127;
 }
+
+bool PEUtil::isProgramCode(unsigned int address)
+{
+	// TODO: should use more correctly method, this is temporaly method...orz
+	return address < 0x60000000;
+}
+
+bool PEUtil::isKernelCode(unsigned int address)
+{
+	// XXX: this can be correct in normal kernel config.
+	// if increaseuserva is set, kernel base address is not 0x80000000. should deal with  this config.
+	return address >= 0x80000000;
+}

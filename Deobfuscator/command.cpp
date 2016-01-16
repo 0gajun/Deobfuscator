@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "command.h"
 #include <iostream>
-
+#include <numeric>
 
 unsigned int CreateShadowSectionCommand::requiredSize()
 {
@@ -71,6 +71,14 @@ void NonReturningCallCommand::execute(std::shared_ptr<PEEditor> editor)
 	editor->overwriteCode(jmp_to_shadow.binary, editor->convertFromVirtToRawAddr(jmp_to_shadow.addr));
 }
 
+bool NonReturningCallCommand::isCommandInProgram()
+{
+	// modification target is only caller_bb and callee_bb.
+	// jmp_target isn't modified.
+	return PEUtil::isProgramCode(caller_bb->head_insn_addr)
+		&& PEUtil::isProgramCode(callee_bb->head_insn_addr);
+}
+
 void CommandInvoker::addCommand(std::shared_ptr<PECommand> command)
 {
 	commands.push_back(command);
@@ -133,6 +141,13 @@ void RedundantJmpReductionCommand::execute(std::shared_ptr<PEEditor> editor)
 
 	std::cout << "redundant jmp reduction" << std::endl;
 	editor->overwriteCode(new_jmp_insn.binary, editor->convertFromVirtToRawAddr(from_bb_last_insn->addr));
+}
+
+bool RedundantJmpReductionCommand::isCommandInProgram()
+{
+	// modification target is only from_bb
+	// to_bb isn't modified.
+	return PEUtil::isProgramCode(from_bb->head_insn_addr);
 }
 
 bool OverlappingFunctionAndBasicBlockCommand::isNeededNearJmp(std::shared_ptr<PEEditor> editor)
@@ -228,4 +243,14 @@ void OverlappingFunctionAndBasicBlockCommand::execute(std::shared_ptr<PEEditor> 
 	Instruction return_jmp = Instruction::JmpInsnBuilder(shadow_head_addr, next_bb_head_addr).build(editor);
 
 	editor->appendShadowSectionCode(return_jmp.binary);
+}
+
+bool OverlappingFunctionAndBasicBlockCommand::isCommandInProgram()
+{
+	// modification target is only prev_bb and overlapped_bbs
+	return PEUtil::isProgramCode(prev_bb->head_insn_addr)
+		&& std::accumulate(overlapped_bbs.begin(), overlapped_bbs.end(), true,
+			[&](bool current_val, std::shared_ptr<BasicBlock> bb) {
+		return current_val && PEUtil::isProgramCode(bb->head_insn_addr);
+	});
 }

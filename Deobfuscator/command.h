@@ -13,6 +13,7 @@ class PECommand abstract
 {
 public:
 	virtual void execute(std::shared_ptr<PEEditor> editor) = 0;
+	virtual bool isCommandInProgram() = 0;
 };
 
 class CreateShadowSectionCommand : public PECommand
@@ -34,6 +35,7 @@ public:
 	NonReturningCallCommand(std::shared_ptr<BasicBlock> caller_bb,
 		std::shared_ptr<BasicBlock> callee_bb, std::shared_ptr<BasicBlock> jmp_target_bb);
 	void execute(std::shared_ptr<PEEditor> editor) override;
+	bool isCommandInProgram() override;
 };
 
 class CallStackTamperingCommand : public CreateShadowSectionCommand
@@ -54,6 +56,7 @@ public:
 		const std::vector<std::shared_ptr<BasicBlock>> overlapped_bbs, const std::shared_ptr<BasicBlock> next_bb);
 
 	void execute(std::shared_ptr<PEEditor> editor) override;
+	bool isCommandInProgram() override;
 };
 
 class RedundantJmpReductionCommand : public PECommand
@@ -64,6 +67,7 @@ private:
 public:
 	RedundantJmpReductionCommand(std::shared_ptr<BasicBlock> from_bb, std::shared_ptr<BasicBlock> to_bb);
 	void execute(std::shared_ptr<PEEditor> editor) override;
+	bool isCommandInProgram() override;
 };
 
 class CommandInvoker
