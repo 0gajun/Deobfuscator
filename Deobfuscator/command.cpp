@@ -204,20 +204,26 @@ void OverlappingFunctionAndBasicBlockCommand::execute(std::shared_ptr<PEEditor> 
 			}
 
 			int prev_bb_insn_list_size = prev_bb->insn_list.size();
-			for (int i = index; i < prev_bb_insn_list_size - 1;  i++) {
+			for (int i = index; i < prev_bb_insn_list_size;  i++) {
 				shadow_section_insns.push_front(*prev_bb->insn_list.back());
 				prev_bb->insn_list.pop_back();
 			}
 
-			Instruction new_jmp = Instruction::JmpInsnBuilder(replace_insn_head_addr, shadow_head_addr).build(editor);
-			unsigned int new_jmp_raw_addr = editor->convertFromVirtToRawAddr(replace_insn_head_addr);
-			editor->overwriteCode(new_jmp.binary, new_jmp_raw_addr);
-			unsigned int nop_size = locatable_size - new_jmp.binary.size();
+			unsigned int new_short_jmp_addr = prev_bb->tail_insn_addr + prev_bb->insn_list.back()->binary.size() - SHORT_JMP_INSN_SIZE;
+			bool can_short_jmp 
+				= SHORT_JMP_INSN_SIZE ==  Instruction::JmpInsnBuilder::estimateJmpInstructionSize(editor, new_short_jmp_addr, shadow_head_addr);
+
+			unsigned int nop_size = can_short_jmp ? locatable_size - SHORT_JMP_INSN_SIZE : locatable_size - NEAR_JMP_INSN_SIZE;
+
+			unsigned int replace_insns_head_raw_addr
+				= editor->convertFromVirtToRawAddr(replace_insn_head_addr);
 			std::vector<unsigned char> nop_code;
 			for (int i = 0; i < nop_size; i++) {
 				nop_code.push_back(OPCODE_NOP);
 			}
-			editor->overwriteCode(nop_code, new_jmp_raw_addr + new_jmp.binary.size());
+			Instruction new_jmp = Instruction::JmpInsnBuilder(replace_insn_head_addr + nop_size, shadow_head_addr).build(editor);
+			editor->overwriteCode(nop_code, replace_insns_head_raw_addr);
+			editor->overwriteCode(new_jmp.binary, replace_insns_head_raw_addr + nop_code.size());
 			break;
 		}
 	// In case of that near jmp isn't needed when opcode is short jmp,
@@ -238,10 +244,14 @@ void OverlappingFunctionAndBasicBlockCommand::execute(std::shared_ptr<PEEditor> 
 
 	// For returning original code section
 	// remove original jmp code
-	overlapped_bb->insn_list.pop_back();
-	unsigned int next_bb_head_addr = editor->convertToOriginalVirtAddr(next_bb->head_insn_addr);
-	Instruction return_jmp = Instruction::JmpInsnBuilder(shadow_head_addr, next_bb_head_addr).build(editor);
+	shadow_section_insns.pop_back();
+	for (Instruction insn : shadow_section_insns) {
+		editor->appendShadowSectionCode(insn.binary);
+	}
 
+	unsigned int next_bb_head_addr = editor->convertToOriginalVirtAddr(next_bb->head_insn_addr);
+	unsigned int return_jmp_addr = editor->nextShadowCodeAddr();
+	Instruction return_jmp = Instruction::JmpInsnBuilder(return_jmp_addr, next_bb_head_addr).build(editor);
 	editor->appendShadowSectionCode(return_jmp.binary);
 }
 

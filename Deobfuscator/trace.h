@@ -59,6 +59,7 @@ public:
 		JmpInsnBuilder(unsigned int address, unsigned int jmp_target_addr);
 
 		Instruction build(const std::shared_ptr<PEEditor> editor);
+		static unsigned int estimateJmpInstructionSize(std::shared_ptr<PEEditor> editor, unsigned int insn_addr, unsigned int jmp_target_addr);
 	};
 
 	class PushInsnBuilder : Builder

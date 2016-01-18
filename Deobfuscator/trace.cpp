@@ -80,6 +80,13 @@ Instruction Instruction::JmpInsnBuilder::build(const std::shared_ptr<PEEditor> e
 	return *insn;
 }
 
+unsigned int Instruction::JmpInsnBuilder::estimateJmpInstructionSize(
+	std::shared_ptr<PEEditor> editor, unsigned int insn_addr, unsigned int jmp_target_addr)
+{
+	signed int short_jmp_offset = editor->convertToOriginalVirtAddr(jmp_target_addr) - (editor->convertToOriginalVirtAddr(insn_addr) + SHORT_JMP_INSN_SIZE);
+	return -128 <= short_jmp_offset && short_jmp_offset <= 127 ? SHORT_JMP_INSN_SIZE : NEAR_JMP_INSN_SIZE;
+}
+
 Instruction::PushInsnBuilder::PushInsnBuilder(unsigned int imm32)
 	: Builder(), imm(imm32)
 {
